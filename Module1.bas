@@ -1,11 +1,10 @@
 Attribute VB_Name = "Module1"
 ' ==========================================================
-' 主流程 1：將「已進單底稿」整理為「已進單整理」
-'   - 重排欄位
+' 已進單整理
+'   - 將「已進單底稿」依欄位對應整理為「已進單整理」
 '   - CA 欄新增 PROGRAM CATEGORY (來源：已進單底稿 E 欄)
 '   - AG 欄 (MK外發) VLOOKUP 上週排單
 '   - BD 欄 (未核可) VLOOKUP 上週排單
-' 主流程 2：將 PJT (BIS 轉換結果) 附加到「已進單整理」末尾並計算 IE
 ' ==========================================================
 
 Sub ProcessDataConversion_Full()
@@ -146,13 +145,13 @@ Sub ProcessDataConversion_Full()
     ' 2. 設定第 1 列特殊欄位的標題
     ' ------------------------------------------------------
     With ws2
-        .Cells(1, 33).Value = "MK外發"           ' AG1
-        .Cells(1, 34).Value = "原始工廠"         ' AH1
-        .Cells(1, 35).Value = "Factory"          ' AI1
-        .Cells(1, 36).Value = "LC_NO"            ' AJ1
-        .Cells(1, 37).Value = "RFP2 YM"          ' AK1
-        .Cells(1, 56).Value = "未核可"           ' BD1
-        .Cells(1, 79).Value = "PROGRAM CATEGORY" ' CA1 (新增)
+        .Cells(1, 33).Value = "MK外發"
+        .Cells(1, 34).Value = "原始工廠"
+        .Cells(1, 35).Value = "Factory"
+        .Cells(1, 36).Value = "LC_NO"
+        .Cells(1, 37).Value = "RFP2 YM"
+        .Cells(1, 56).Value = "未核可"
+        .Cells(1, 79).Value = "PROGRAM CATEGORY"
     End With
 
     ' ------------------------------------------------------
@@ -163,9 +162,6 @@ Sub ProcessDataConversion_Full()
         ws2.Cells(j, 37).Formula = _
             "=YEAR(Z" & j & ")&IF(MONTH(Z" & j & ")<10,""0""&MONTH(Z" & j & "),MONTH(Z" & j & "))"
 
-        ' AG: MK外發  <-  上週排單!AH (col 34)
-        ' BD: 未核可  <-  上週排單!BE (col 57)
-        ' 查找鍵：E (F_Style) & AF (MK) & BC (Status)
         If Not wsLookup Is Nothing Then
             ws2.Cells(j, 33).Formula = _
                 "=IFERROR(VLOOKUP(E" & j & "&AF" & j & "&BC" & j & _
@@ -242,137 +238,6 @@ Sub ProcessDataConversion_Full()
     rngA.TextToColumns Destination:=ws2.Range("A2"), _
         DataType:=xlFixedWidth, _
         FieldInfo:=Array(1, xlTextFormat)
-
-CleanExit:
-    Application.Calculation = xlCalculationAutomatic
-    Application.ScreenUpdating = True
-End Sub
-
-
-' ==========================================================
-' 將 PJT (BIS 轉換結果) 附加到「已進單整理」末尾並計算 IE
-'   - PJT 的公式以「值」貼上 (避免 =BIS!... 在新位置失效)
-'   - IE (AC 欄, col 29) = CPO_QTYIE (I) / CPO_QTY (H)
-'   - PJT 實際有效列數依據 BIS 的最後一列判斷
-' ==========================================================
-Sub AppendPJT_To_FinishedOrders()
-    Dim wb As Workbook
-    Dim wsTarget As Worksheet
-    Dim wsPJT As Worksheet
-    Dim wsBIS As Worksheet
-    Dim wsLookup As Worksheet
-    Dim targetLastRow As Long
-    Dim pjtLastRow As Long
-    Dim bisLastRow As Long
-    Dim startRow As Long
-    Dim copyRows As Long
-    Dim copyCols As Long
-    Dim i As Long, j As Long
-    Dim qty As Variant, qtyIE As Variant
-
-    Application.ScreenUpdating = False
-    Application.Calculation = xlCalculationManual
-
-    Set wb = ThisWorkbook
-
-    On Error Resume Next
-    Set wsTarget = wb.Sheets("已進單整理")
-    Set wsPJT = wb.Sheets("PJT")
-    Set wsBIS = wb.Sheets("BIS")
-    Set wsLookup = wb.Sheets("上週排單")
-    On Error GoTo 0
-
-    If wsTarget Is Nothing Then
-        MsgBox "找不到「已進單整理」，請先執行 ProcessDataConversion_Full。", vbCritical
-        GoTo CleanExit
-    End If
-    If wsPJT Is Nothing Then
-        MsgBox "找不到「PJT」工作表。", vbCritical
-        GoTo CleanExit
-    End If
-
-    targetLastRow = wsTarget.Cells(wsTarget.Rows.Count, 1).End(xlUp).Row
-
-    ' PJT 公式參照 BIS，因此 PJT 的有效資料 = BIS 實際資料的列數
-    If Not wsBIS Is Nothing Then
-        bisLastRow = wsBIS.Cells(wsBIS.Rows.Count, 1).End(xlUp).Row
-        pjtLastRow = bisLastRow
-    Else
-        pjtLastRow = wsPJT.Cells(wsPJT.Rows.Count, 1).End(xlUp).Row
-    End If
-
-    If pjtLastRow < 2 Then
-        MsgBox "PJT 沒有可附加的資料。", vbExclamation
-        GoTo CleanExit
-    End If
-
-    copyRows = pjtLastRow - 1   ' PJT 第 2 列開始為資料
-    copyCols = 73               ' A~BU，對齊已進單整理欄位範圍
-    startRow = targetLastRow + 1
-
-    ' 將 PJT 公式結果以「值」貼上
-    wsTarget.Range(wsTarget.Cells(startRow, 1), _
-                   wsTarget.Cells(startRow + copyRows - 1, copyCols)).Value = _
-        wsPJT.Range(wsPJT.Cells(2, 1), _
-                    wsPJT.Cells(pjtLastRow, copyCols)).Value
-
-    ' 為新附加列填入計算 / 公式
-    For i = startRow To startRow + copyRows - 1
-
-        ' BC 若為空則補上 'PJT' (PJT 來源已有，此為保險)
-        If Trim(CStr(wsTarget.Cells(i, 55).Value)) = "" Then
-            wsTarget.Cells(i, 55).Value = "PJT"
-        End If
-
-        ' IE = CPO_QTYIE (I) / CPO_QTY (H)，寫入 AC (col 29)
-        qty = wsTarget.Cells(i, 8).Value
-        qtyIE = wsTarget.Cells(i, 9).Value
-        If IsNumeric(qty) And IsNumeric(qtyIE) Then
-            If qty <> 0 Then
-                wsTarget.Cells(i, 29).Value = qtyIE / qty
-            End If
-        End If
-
-        ' 同步補上 AG / BD / AH / AK / AI 公式，保持與既有列一致
-        If Not wsLookup Is Nothing Then
-            wsTarget.Cells(i, 33).Formula = _
-                "=IFERROR(VLOOKUP(E" & i & "&AF" & i & "&BC" & i & _
-                ",上週排單!$A:$AH,34,FALSE),"""")"
-            wsTarget.Cells(i, 56).Formula = _
-                "=IFERROR(VLOOKUP(E" & i & "&AF" & i & "&BC" & i & _
-                ",上週排單!$A:$BE,57,FALSE),"""")"
-        End If
-
-        wsTarget.Cells(i, 34).Formula = "=LEFT(AG" & i & ",3)"
-        wsTarget.Cells(i, 37).Formula = _
-            "=YEAR(Z" & i & ")&IF(MONTH(Z" & i & ")<10,""0""&MONTH(Z" & i & "),MONTH(Z" & i & "))"
-
-        Dim factoryCode As String
-        factoryCode = Trim(UCase(wsTarget.Cells(i, 32).Value))
-        Select Case factoryCode
-            Case "MK1", "MK2", "MK5", "MH1", "MH2", "MH3"
-                wsTarget.Cells(i, 35).Value = "自製"
-            Case Else
-                wsTarget.Cells(i, 35).Value = "外發"
-        End Select
-    Next i
-
-    ' 格式套用
-    Dim appendedRng As Range
-    Set appendedRng = wsTarget.Range(wsTarget.Cells(startRow, 1), _
-                                     wsTarget.Cells(startRow + copyRows - 1, copyCols))
-
-    appendedRng.Borders.LineStyle = xlContinuous
-    appendedRng.Borders.Weight = xlThin
-    appendedRng.Borders.Color = vbBlack
-    appendedRng.HorizontalAlignment = xlCenter
-    appendedRng.VerticalAlignment = xlCenter
-
-    With appendedRng.Font
-        .Name = "Calibri"
-        .Bold = True
-        .Size = 12
-    End With
 
 CleanExit:
     Application.Calculation = xlCalculationAutomatic
