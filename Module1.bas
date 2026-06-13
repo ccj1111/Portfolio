@@ -1,11 +1,14 @@
 Attribute VB_Name = "Module1"
+' ==========================================================
+' 主流程 1：將「已進單底稿」整理為「已進單整理」
+'   - 重排欄位
+'   - CA 欄新增 PROGRAM CATEGORY (來源：已進單底稿 E 欄)
+'   - AG 欄 (MK外發) VLOOKUP 上週排單
+'   - BD 欄 (未核可) VLOOKUP 上週排單
+' 主流程 2：將 PJT (BIS 轉換結果) 附加到「已進單整理」末尾並計算 IE
+' ==========================================================
+
 Sub ProcessDataConversion_Full()
-    ' ==========================================
-    ' 將「已進單底稿」整理為「已進單整理」
-    '   1. 依規則複製 / 重排欄位
-    '   2. 新增 CA 欄 = 已進單底稿 E 欄 (PROGRAM CATEGORY)
-    '   3. AG 欄 (MK外發) 以 VLOOKUP 從「上週排單」回填
-    ' ==========================================
     Dim ws1 As Worksheet
     Dim ws2 As Worksheet
     Dim wsLookup As Worksheet
@@ -31,7 +34,6 @@ Sub ProcessDataConversion_Full()
         GoTo CleanExit
     End If
 
-    ' 重建目的工作表
     On Error Resume Next
     Application.DisplayAlerts = False
     wb.Sheets("已進單整理").Delete
@@ -47,10 +49,9 @@ Sub ProcessDataConversion_Full()
         GoTo CleanExit
     End If
 
-    ' ==========================================
-    ' 1. 核心迴圈：複製資料並調整欄位順序
-    '    來源從第 2 列 (標題列) 開始，目的的第 1 列即為標題
-    ' ==========================================
+    ' ------------------------------------------------------
+    ' 1. 複製資料並調整欄位順序
+    ' ------------------------------------------------------
     For i = 2 To lastRow
         targetRow = i - 1
 
@@ -61,9 +62,9 @@ Sub ProcessDataConversion_Full()
         ws2.Cells(targetRow, 5).Value = ws1.Cells(i, 9).Value    ' E  <- I  F_Style
         ws2.Cells(targetRow, 6).Value = ws1.Cells(i, 10).Value   ' F  <- J  C_Style
         ws2.Cells(targetRow, 7).Value = ws1.Cells(i, 11).Value   ' G  <- K  PCS
-        ws2.Cells(targetRow, 8).Value = ws1.Cells(i, 13).Value   ' H  <- M
-        ws2.Cells(targetRow, 9).Value = ws1.Cells(i, 14).Value   ' I  <- N
-        ws2.Cells(targetRow, 10).Value = ws1.Cells(i, 17).Value  ' J  <- Q
+        ws2.Cells(targetRow, 8).Value = ws1.Cells(i, 13).Value   ' H  <- M  CPO_QTY
+        ws2.Cells(targetRow, 9).Value = ws1.Cells(i, 14).Value   ' I  <- N  CPO_QTYIE
+        ws2.Cells(targetRow, 10).Value = ws1.Cells(i, 17).Value  ' J  <- Q  FOB
         ws2.Cells(targetRow, 11).Value = ws1.Cells(i, 15).Value  ' K  <- O  CPO
         ws2.Cells(targetRow, 12).Value = ws1.Cells(i, 18).Value  ' L  <- R
         ws2.Cells(targetRow, 13).Value = ws1.Cells(i, 19).Value  ' M  <- S
@@ -86,7 +87,7 @@ Sub ProcessDataConversion_Full()
         ws2.Cells(targetRow, 30).Value = ws1.Cells(i, 42).Value  ' AD <- AP
         ws2.Cells(targetRow, 31).Value = ws1.Cells(i, 43).Value  ' AE <- AQ
         ws2.Cells(targetRow, 32).Value = ws1.Cells(i, 44).Value  ' AF <- AR  MK
-        ' AG (33), AH (34), AI (35), AJ (36), AK (37) 留給公式 / 邏輯判斷
+        ' AG (33)、AH (34)、AI (35)、AJ (36)、AK (37) 由公式填入
         ws2.Cells(targetRow, 38).Value = ws1.Cells(i, 45).Value  ' AL <- AS
         ws2.Cells(targetRow, 39).Value = ws1.Cells(i, 46).Value  ' AM <- AT
         ws2.Cells(targetRow, 40).Value = ws1.Cells(i, 75).Value  ' AN <- BW
@@ -105,7 +106,7 @@ Sub ProcessDataConversion_Full()
         ws2.Cells(targetRow, 53).Value = ws1.Cells(i, 61).Value  ' BA <- BI
         ws2.Cells(targetRow, 54).Value = ws1.Cells(i, 4).Value   ' BB <- D  PROGRAM
         ws2.Cells(targetRow, 55).Value = ws1.Cells(i, 7).Value   ' BC <- G  Status
-        ' BD (56) 留作「未核可」固定欄
+        ' BD (56) 未核可 由 VLOOKUP 公式填入
         ws2.Cells(targetRow, 57).Value = ws1.Cells(i, 73).Value  ' BE <- BU
         ws2.Cells(targetRow, 58).Value = ws1.Cells(i, 71).Value  ' BF <- BS
         ws2.Cells(targetRow, 59).Value = ws1.Cells(i, 72).Value  ' BG <- BT
@@ -131,52 +132,51 @@ Sub ProcessDataConversion_Full()
         ' === 新增欄位 ===
         ws2.Cells(targetRow, 79).Value = ws1.Cells(i, 5).Value   ' CA <- E  PROGRAM CATEGORY
 
-        ' 複製重要欄位的儲存格底色
-        ws2.Cells(targetRow, 5).Interior.Color = ws1.Cells(i, 9).Interior.Color   ' F_Style
-        ws2.Cells(targetRow, 7).Interior.Color = ws1.Cells(i, 11).Interior.Color  ' PCS
-        ws2.Cells(targetRow, 11).Interior.Color = ws1.Cells(i, 15).Interior.Color ' CPO
-        ws2.Cells(targetRow, 14).Interior.Color = ws1.Cells(i, 20).Interior.Color ' EXP
-        ws2.Cells(targetRow, 26).Interior.Color = ws1.Cells(i, 34).Interior.Color ' CRFP
-        ws2.Cells(targetRow, 29).Interior.Color = ws1.Cells(i, 40).Interior.Color ' IE
+        ws2.Cells(targetRow, 5).Interior.Color = ws1.Cells(i, 9).Interior.Color
+        ws2.Cells(targetRow, 7).Interior.Color = ws1.Cells(i, 11).Interior.Color
+        ws2.Cells(targetRow, 11).Interior.Color = ws1.Cells(i, 15).Interior.Color
+        ws2.Cells(targetRow, 14).Interior.Color = ws1.Cells(i, 20).Interior.Color
+        ws2.Cells(targetRow, 26).Interior.Color = ws1.Cells(i, 34).Interior.Color
+        ws2.Cells(targetRow, 29).Interior.Color = ws1.Cells(i, 40).Interior.Color
     Next i
 
     targetLastRow = targetRow
 
-    ' ==========================================
+    ' ------------------------------------------------------
     ' 2. 設定第 1 列特殊欄位的標題
-    ' ==========================================
+    ' ------------------------------------------------------
     With ws2
-        .Cells(1, 33).Value = "MK外發"     ' AG1
-        .Cells(1, 34).Value = "原始工廠"   ' AH1
-        .Cells(1, 35).Value = "Factory"    ' AI1
-        .Cells(1, 36).Value = "LC_NO"      ' AJ1
-        .Cells(1, 37).Value = "RFP2 YM"    ' AK1
-        .Cells(1, 56).Value = "未核可"     ' BD1
+        .Cells(1, 33).Value = "MK外發"           ' AG1
+        .Cells(1, 34).Value = "原始工廠"         ' AH1
+        .Cells(1, 35).Value = "Factory"          ' AI1
+        .Cells(1, 36).Value = "LC_NO"            ' AJ1
+        .Cells(1, 37).Value = "RFP2 YM"          ' AK1
+        .Cells(1, 56).Value = "未核可"           ' BD1
         .Cells(1, 79).Value = "PROGRAM CATEGORY" ' CA1 (新增)
     End With
 
-    ' ==========================================
+    ' ------------------------------------------------------
     ' 3. 插入公式 / 邏輯判斷 (第 2 列 ~ 最末列)
-    ' ==========================================
+    ' ------------------------------------------------------
     For j = 2 To targetLastRow
 
-        ' AK: RFP2 YM <- Z 欄 (CRFP)
         ws2.Cells(j, 37).Formula = _
             "=YEAR(Z" & j & ")&IF(MONTH(Z" & j & ")<10,""0""&MONTH(Z" & j & "),MONTH(Z" & j & "))"
 
-        ' AG: MK外發 <- VLOOKUP 上週排單
-        '   上週排單!A 欄 = F_Style & MK & Status (對應已進單整理的 E & AF & BC)
-        '   上週排單!AH 欄 (第 34 欄) = MK外發
+        ' AG: MK外發  <-  上週排單!AH (col 34)
+        ' BD: 未核可  <-  上週排單!BE (col 57)
+        ' 查找鍵：E (F_Style) & AF (MK) & BC (Status)
         If Not wsLookup Is Nothing Then
             ws2.Cells(j, 33).Formula = _
                 "=IFERROR(VLOOKUP(E" & j & "&AF" & j & "&BC" & j & _
                 ",上週排單!$A:$AH,34,FALSE),"""")"
+            ws2.Cells(j, 56).Formula = _
+                "=IFERROR(VLOOKUP(E" & j & "&AF" & j & "&BC" & j & _
+                ",上週排單!$A:$BE,57,FALSE),"""")"
         End If
 
-        ' AH: 原始工廠 <- LEFT(AG, 3)
         ws2.Cells(j, 34).Formula = "=LEFT(AG" & j & ",3)"
 
-        ' AI: Factory  自製/外發 判斷 (依 AF 廠別代碼)
         Dim factoryCode As String
         factoryCode = Trim(UCase(ws2.Cells(j, 32).Value))
         Select Case factoryCode
@@ -186,7 +186,6 @@ Sub ProcessDataConversion_Full()
                 ws2.Cells(j, 35).Value = "外發"
         End Select
 
-        ' AJ: LC_NO  依顏色判斷
         Dim cellE As Range, cellK As Range, cellAJ As Range
         Set cellE = ws2.Cells(j, 5)
         Set cellK = ws2.Cells(j, 11)
@@ -203,9 +202,9 @@ Sub ProcessDataConversion_Full()
         End If
     Next j
 
-    ' ==========================================
+    ' ------------------------------------------------------
     ' 4. 格式設定
-    ' ==========================================
+    ' ------------------------------------------------------
     Dim rng As Range
     Set rng = ws2.UsedRange
 
@@ -222,10 +221,9 @@ Sub ProcessDataConversion_Full()
     rng.HorizontalAlignment = xlCenter
     rng.VerticalAlignment = xlCenter
 
-    ws2.Columns(5).VerticalAlignment = xlTop   ' E (F_Style)
-    ws2.Columns(11).VerticalAlignment = xlTop  ' K (CPO)
+    ws2.Columns(5).VerticalAlignment = xlTop
+    ws2.Columns(11).VerticalAlignment = xlTop
 
-    ' 標示需要關注的標題欄底色
     ws2.Range("AG1, AH1, BD1, CA1").Interior.Color = vbYellow
 
     With ws2.Cells.Font
@@ -239,12 +237,142 @@ Sub ProcessDataConversion_Full()
     ws2.Columns.ColumnWidth = 14
     ws2.Rows.RowHeight = 15
 
-    ' A 欄轉文字格式
     Dim rngA As Range
     Set rngA = ws2.Range("A2:A" & targetLastRow)
     rngA.TextToColumns Destination:=ws2.Range("A2"), _
         DataType:=xlFixedWidth, _
         FieldInfo:=Array(1, xlTextFormat)
+
+CleanExit:
+    Application.Calculation = xlCalculationAutomatic
+    Application.ScreenUpdating = True
+End Sub
+
+
+' ==========================================================
+' 將 PJT (BIS 轉換結果) 附加到「已進單整理」末尾並計算 IE
+'   - PJT 的公式以「值」貼上 (避免 =BIS!... 在新位置失效)
+'   - IE (AC 欄, col 29) = CPO_QTYIE (I) / CPO_QTY (H)
+'   - PJT 實際有效列數依據 BIS 的最後一列判斷
+' ==========================================================
+Sub AppendPJT_To_FinishedOrders()
+    Dim wb As Workbook
+    Dim wsTarget As Worksheet
+    Dim wsPJT As Worksheet
+    Dim wsBIS As Worksheet
+    Dim wsLookup As Worksheet
+    Dim targetLastRow As Long
+    Dim pjtLastRow As Long
+    Dim bisLastRow As Long
+    Dim startRow As Long
+    Dim copyRows As Long
+    Dim copyCols As Long
+    Dim i As Long, j As Long
+    Dim qty As Variant, qtyIE As Variant
+
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+
+    Set wb = ThisWorkbook
+
+    On Error Resume Next
+    Set wsTarget = wb.Sheets("已進單整理")
+    Set wsPJT = wb.Sheets("PJT")
+    Set wsBIS = wb.Sheets("BIS")
+    Set wsLookup = wb.Sheets("上週排單")
+    On Error GoTo 0
+
+    If wsTarget Is Nothing Then
+        MsgBox "找不到「已進單整理」，請先執行 ProcessDataConversion_Full。", vbCritical
+        GoTo CleanExit
+    End If
+    If wsPJT Is Nothing Then
+        MsgBox "找不到「PJT」工作表。", vbCritical
+        GoTo CleanExit
+    End If
+
+    targetLastRow = wsTarget.Cells(wsTarget.Rows.Count, 1).End(xlUp).Row
+
+    ' PJT 公式參照 BIS，因此 PJT 的有效資料 = BIS 實際資料的列數
+    If Not wsBIS Is Nothing Then
+        bisLastRow = wsBIS.Cells(wsBIS.Rows.Count, 1).End(xlUp).Row
+        pjtLastRow = bisLastRow
+    Else
+        pjtLastRow = wsPJT.Cells(wsPJT.Rows.Count, 1).End(xlUp).Row
+    End If
+
+    If pjtLastRow < 2 Then
+        MsgBox "PJT 沒有可附加的資料。", vbExclamation
+        GoTo CleanExit
+    End If
+
+    copyRows = pjtLastRow - 1   ' PJT 第 2 列開始為資料
+    copyCols = 73               ' A~BU，對齊已進單整理欄位範圍
+    startRow = targetLastRow + 1
+
+    ' 將 PJT 公式結果以「值」貼上
+    wsTarget.Range(wsTarget.Cells(startRow, 1), _
+                   wsTarget.Cells(startRow + copyRows - 1, copyCols)).Value = _
+        wsPJT.Range(wsPJT.Cells(2, 1), _
+                    wsPJT.Cells(pjtLastRow, copyCols)).Value
+
+    ' 為新附加列填入計算 / 公式
+    For i = startRow To startRow + copyRows - 1
+
+        ' BC 若為空則補上 'PJT' (PJT 來源已有，此為保險)
+        If Trim(CStr(wsTarget.Cells(i, 55).Value)) = "" Then
+            wsTarget.Cells(i, 55).Value = "PJT"
+        End If
+
+        ' IE = CPO_QTYIE (I) / CPO_QTY (H)，寫入 AC (col 29)
+        qty = wsTarget.Cells(i, 8).Value
+        qtyIE = wsTarget.Cells(i, 9).Value
+        If IsNumeric(qty) And IsNumeric(qtyIE) Then
+            If qty <> 0 Then
+                wsTarget.Cells(i, 29).Value = qtyIE / qty
+            End If
+        End If
+
+        ' 同步補上 AG / BD / AH / AK / AI 公式，保持與既有列一致
+        If Not wsLookup Is Nothing Then
+            wsTarget.Cells(i, 33).Formula = _
+                "=IFERROR(VLOOKUP(E" & i & "&AF" & i & "&BC" & i & _
+                ",上週排單!$A:$AH,34,FALSE),"""")"
+            wsTarget.Cells(i, 56).Formula = _
+                "=IFERROR(VLOOKUP(E" & i & "&AF" & i & "&BC" & i & _
+                ",上週排單!$A:$BE,57,FALSE),"""")"
+        End If
+
+        wsTarget.Cells(i, 34).Formula = "=LEFT(AG" & i & ",3)"
+        wsTarget.Cells(i, 37).Formula = _
+            "=YEAR(Z" & i & ")&IF(MONTH(Z" & i & ")<10,""0""&MONTH(Z" & i & "),MONTH(Z" & i & "))"
+
+        Dim factoryCode As String
+        factoryCode = Trim(UCase(wsTarget.Cells(i, 32).Value))
+        Select Case factoryCode
+            Case "MK1", "MK2", "MK5", "MH1", "MH2", "MH3"
+                wsTarget.Cells(i, 35).Value = "自製"
+            Case Else
+                wsTarget.Cells(i, 35).Value = "外發"
+        End Select
+    Next i
+
+    ' 格式套用
+    Dim appendedRng As Range
+    Set appendedRng = wsTarget.Range(wsTarget.Cells(startRow, 1), _
+                                     wsTarget.Cells(startRow + copyRows - 1, copyCols))
+
+    appendedRng.Borders.LineStyle = xlContinuous
+    appendedRng.Borders.Weight = xlThin
+    appendedRng.Borders.Color = vbBlack
+    appendedRng.HorizontalAlignment = xlCenter
+    appendedRng.VerticalAlignment = xlCenter
+
+    With appendedRng.Font
+        .Name = "Calibri"
+        .Bold = True
+        .Size = 12
+    End With
 
 CleanExit:
     Application.Calculation = xlCalculationAutomatic
