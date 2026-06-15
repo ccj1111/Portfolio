@@ -1,11 +1,11 @@
 Attribute VB_Name = "Module2"
 ' ==========================================================
-' PJT й™„еЉ 
-'   - е°‡ PJT (BIS иЅ‰жЏ›зµђжћњ) д»ҐгЂЊеЂјгЂЌй™„еЉ е€°гЂЊе·ІйЂІе–®ж•ґзђ†гЂЌжњ«е°ѕ
-'   - IE = CPO_QTYIE (I) / CPO_QTY (H) в†’ еЇ«е…Ґ AC ж¬„ (col 29)
-'   - еђЊж­ҐиЈњдёЉ AG / BD VLOOKUPгЂЃAH / AK е…¬ејЏи€‡ AI е» е€Ґе€¤ж–·
-'   - PJT еЇ¦йљ›жњ‰ж•€е€—ж•ёдѕќж“љ BIS зљ„жњЂеѕЊдёЂе€—е€¤ж–·
-' еџ·иЎЊе‰ЌжЏђпјљеї…й €е…€еџ·иЎЊ Module1 зљ„ ProcessDataConversion_Full
+' PJT ЄюҐ[
+'   - ±N PJT (BIS Ваґ«µІЄG) ҐHЎu­ИЎvЄюҐ[ЁмЎu¤w¶iіжѕгІzЎvҐЅ§А
+'   - IE = CPO_QTYIE (I) / CPO_QTY (H) Ўч јg¤J AC Дж (col 29)
+'   - ¦PЁBёЙ¤W AG / BD VLOOKUPЎBAH / AK ¤Ѕ¦Ў»P AI јt§O§PВ_
+'   - PJT №к»Ъ¦і®Д¦CјЖЁМѕЪ BIS ЄєіМ«б¤@¦C§PВ_
+' °х¦ж«eґЈЎGҐІ¶·Ґэ°х¦ж Module1 Єє ProcessDataConversion_Full
 ' ==========================================================
 
 Sub AppendPJT_To_FinishedOrders()
@@ -30,25 +30,25 @@ Sub AppendPJT_To_FinishedOrders()
     Set wb = ThisWorkbook
 
     On Error Resume Next
-    Set wsTarget = wb.Sheets("е·ІйЂІе–®ж•ґзђ†")
+    Set wsTarget = wb.Sheets("¤w¶iіжѕгІz")
     Set wsPJT = wb.Sheets("PJT")
     Set wsBIS = wb.Sheets("BIS")
-    Set wsLookup = wb.Sheets("дёЉйЂ±жЋ’е–®")
+    Set wsLookup = wb.Sheets("¤W¶g±Жіж")
     On Error GoTo 0
 
     If wsTarget Is Nothing Then
-        MsgBox "ж‰ѕдёЌе€°гЂЊе·ІйЂІе–®ж•ґзђ†гЂЌпјЊи«‹е…€еџ·иЎЊ Module1 зљ„ ProcessDataConversion_FullгЂ‚", vbCritical
+        MsgBox "§д¤ЈЁмЎu¤w¶iіжѕгІzЎvЎAЅРҐэ°х¦ж Module1 Єє ProcessDataConversion_FullЎC", vbCritical
         GoTo CleanExit
     End If
     If wsPJT Is Nothing Then
-        MsgBox "ж‰ѕдёЌе€°гЂЊPJTгЂЌе·ҐдЅњиЎЁгЂ‚", vbCritical
+        MsgBox "§д¤ЈЁмЎuPJTЎv¤u§@ЄнЎC", vbCritical
         GoTo CleanExit
     End If
 
-    ' е·ІйЂІе–®ж•ґзђ† жњЂеѕЊдёЂе€— (дѕќ A ж¬„)
+    ' ¤w¶iіжѕгІz іМ«б¤@¦C (ЁМ A Дж)
     targetLastRow = wsTarget.Cells(wsTarget.Rows.Count, 1).End(xlUp).Row
 
-    ' PJT е…¬ејЏеЏѓз…§ BISпјЊе› ж­¤ PJT зљ„жњ‰ж•€иі‡ж–™ = BIS еЇ¦йљ›иі‡ж–™е€—ж•ё
+    ' PJT ¤Ѕ¦Ў°С·У BISЎA¦]¦№ PJT Єє¦і®Дёк®Ж = BIS №к»Ъёк®Ж¦CјЖ
     If Not wsBIS Is Nothing Then
         bisLastRow = wsBIS.Cells(wsBIS.Rows.Count, 1).End(xlUp).Row
         pjtLastRow = bisLastRow
@@ -57,29 +57,29 @@ Sub AppendPJT_To_FinishedOrders()
     End If
 
     If pjtLastRow < 2 Then
-        MsgBox "PJT жІ’жњ‰еЏЇй™„еЉ зљ„иі‡ж–™гЂ‚", vbExclamation
+        MsgBox "PJT ЁS¦іҐiЄюҐ[Єєёк®ЖЎC", vbExclamation
         GoTo CleanExit
     End If
 
-    copyRows = pjtLastRow - 1   ' PJT з¬¬ 2 е€—й–‹е§‹з‚єиі‡ж–™
-    copyCols = 73               ' A~BUпјЊе°ЌйЅЉе·ІйЂІе–®ж•ґзђ†ж¬„дЅЌзЇ„ењЌ
+    copyRows = pjtLastRow - 1   ' PJT ІД 2 ¦C¶}©l¬°ёк®Ж
+    copyCols = 73               ' A~BUЎA№п»ф¤w¶iіжѕгІzДж¦мЅdіт
     startRow = targetLastRow + 1
 
-    ' е°‡ PJT е…¬ејЏзµђжћњд»ҐгЂЊеЂјгЂЌиІје€° е·ІйЂІе–®ж•ґзђ†
+    ' ±N PJT ¤Ѕ¦ЎµІЄGҐHЎu­ИЎv¶KЁм ¤w¶iіжѕгІz
     wsTarget.Range(wsTarget.Cells(startRow, 1), _
                    wsTarget.Cells(startRow + copyRows - 1, copyCols)).Value = _
         wsPJT.Range(wsPJT.Cells(2, 1), _
                     wsPJT.Cells(pjtLastRow, copyCols)).Value
 
-    ' з‚єж–°й™„еЉ е€—еЎ«е…ҐиЁ€з®— / е…¬ејЏ
+    ' ¬°·sЄюҐ[¦C¶с¤J­pєв / ¤Ѕ¦Ў
     For i = startRow To startRow + copyRows - 1
 
-        ' BC и‹Ґз‚єз©єе‰‡иЈњдёЉ 'PJT'
+        ' BC ­Y¬°ЄЕ«hёЙ¤W 'PJT'
         If Trim(CStr(wsTarget.Cells(i, 55).Value)) = "" Then
             wsTarget.Cells(i, 55).Value = "PJT"
         End If
 
-        ' IE = CPO_QTYIE (I) / CPO_QTY (H)пјЊеЇ«е…Ґ AC (col 29)
+        ' IE = CPO_QTYIE (I) / CPO_QTY (H)ЎAјg¤J AC (col 29)
         qty = wsTarget.Cells(i, 8).Value
         qtyIE = wsTarget.Cells(i, 9).Value
         If IsNumeric(qty) And IsNumeric(qtyIE) Then
@@ -88,31 +88,31 @@ Sub AppendPJT_To_FinishedOrders()
             End If
         End If
 
-        ' AG / BD VLOOKUPпјЊи€‡ж—ўжњ‰е€—дїќжЊЃдёЂи‡ґ
+        ' AG / BD VLOOKUPЎA»P¬J¦і¦C«O«щ¤@­P
         If Not wsLookup Is Nothing Then
             wsTarget.Cells(i, 33).Formula = _
                 "=IFERROR(VLOOKUP(E" & i & "&AF" & i & "&BC" & i & _
-                ",дёЉйЂ±жЋ’е–®!$A:$AH,34,FALSE),"""")"
+                ",¤W¶g±Жіж!$A:$AH,34,FALSE),"""")"
             wsTarget.Cells(i, 56).Formula = _
                 "=IFERROR(VLOOKUP(E" & i & "&AF" & i & "&BC" & i & _
-                ",дёЉйЂ±жЋ’е–®!$A:$BE,57,FALSE),"""")"
+                ",¤W¶g±Жіж!$A:$BE,57,FALSE),"""")"
         End If
 
         wsTarget.Cells(i, 34).Formula = "=LEFT(AG" & i & ",3)"
         wsTarget.Cells(i, 37).Formula = _
             "=YEAR(Z" & i & ")&IF(MONTH(Z" & i & ")<10,""0""&MONTH(Z" & i & "),MONTH(Z" & i & "))"
 
-        ' AI е» е€Ґе€¤ж–·
+        ' AI јt§O§PВ_
         factoryCode = Trim(UCase(wsTarget.Cells(i, 32).Value))
         Select Case factoryCode
             Case "MK1", "MK2", "MK5", "MH1", "MH2", "MH3"
-                wsTarget.Cells(i, 35).Value = "и‡ЄиЈЅ"
+                wsTarget.Cells(i, 35).Value = "¦Ы»s"
             Case Else
-                wsTarget.Cells(i, 35).Value = "е¤–з™ј"
+                wsTarget.Cells(i, 35).Value = "Ґ~µo"
         End Select
     Next i
 
-    ' ж јејЏеҐ—з”Ё
+    ' ®ж¦Ў®MҐО
     Dim appendedRng As Range
     Set appendedRng = wsTarget.Range(wsTarget.Cells(startRow, 1), _
                                      wsTarget.Cells(startRow + copyRows - 1, copyCols))

@@ -1,10 +1,10 @@
 Attribute VB_Name = "Module1"
 ' ==========================================================
-' å·²é€²å–®æ•´ç†
-'   - å°‡ã€Œå·²é€²å–®åº•ç¨¿ã€ä¾æ¬„ä½å°æ‡‰æ•´ç†ç‚ºã€Œå·²é€²å–®æ•´ç†ã€
-'   - CA æ¬„æ–°å¢ PROGRAM CATEGORY (ä¾†æºï¼šå·²é€²å–®åº•ç¨¿ E æ¬„)
-'   - AG æ¬„ (MKå¤–ç™¼) VLOOKUP ä¸Šé€±æ’å–®
-'   - BD æ¬„ (æœªæ ¸å¯) VLOOKUP ä¸Šé€±æ’å–®
+' ¤w¶i³æ¾ã²z
+'   - ±N¡u¤w¶i³æ©³½Z¡v¨ÌÄæ¦ì¹ïÀ³¾ã²z¬°¡u¤w¶i³æ¾ã²z¡v
+'   - CA Äæ·s¼W PROGRAM CATEGORY (¨Ó·½¡G¤w¶i³æ©³½Z E Äæ)
+'   - AG Äæ (MK¥~µo) VLOOKUP ¤W¶g±Æ³æ
+'   - BD Äæ (¥¼®Ö¥i) VLOOKUP ¤W¶g±Æ³æ
 ' ==========================================================
 
 Sub ProcessDataConversion_Full()
@@ -24,32 +24,32 @@ Sub ProcessDataConversion_Full()
     Set wb = ThisWorkbook
 
     On Error Resume Next
-    Set ws1 = wb.Sheets("å·²é€²å–®åº•ç¨¿")
-    Set wsLookup = wb.Sheets("ä¸Šé€±æ’å–®")
+    Set ws1 = wb.Sheets("¤w¶i³æ©³½Z")
+    Set wsLookup = wb.Sheets("¤W¶g±Æ³æ")
     On Error GoTo 0
 
     If ws1 Is Nothing Then
-        MsgBox "éŒ¯èª¤ï¼šæ‰¾ä¸åˆ°ä¾†æºå·¥ä½œè¡¨ã€Œå·²é€²å–®åº•ç¨¿ã€ã€‚", vbCritical
+        MsgBox "¿ù»~¡G§ä¤£¨ì¨Ó·½¤u§@ªí¡u¤w¶i³æ©³½Z¡v¡C", vbCritical
         GoTo CleanExit
     End If
 
     On Error Resume Next
     Application.DisplayAlerts = False
-    wb.Sheets("å·²é€²å–®æ•´ç†").Delete
+    wb.Sheets("¤w¶i³æ¾ã²z").Delete
     Application.DisplayAlerts = True
     On Error GoTo 0
 
     Set ws2 = wb.Sheets.Add(After:=wb.Sheets(wb.Sheets.Count))
-    ws2.Name = "å·²é€²å–®æ•´ç†"
+    ws2.Name = "¤w¶i³æ¾ã²z"
 
     lastRow = ws1.Cells(ws1.Rows.Count, 1).End(xlUp).Row
     If lastRow < 2 Then
-        MsgBox "ä¾†æºå·¥ä½œè¡¨ã€Œå·²é€²å–®åº•ç¨¿ã€æ²’æœ‰æœ‰æ•ˆçš„è³‡æ–™ã€‚", vbExclamation
+        MsgBox "¨Ó·½¤u§@ªí¡u¤w¶i³æ©³½Z¡v¨S¦³¦³®Äªº¸ê®Æ¡C", vbExclamation
         GoTo CleanExit
     End If
 
     ' ------------------------------------------------------
-    ' 1. è¤‡è£½è³‡æ–™ä¸¦èª¿æ•´æ¬„ä½é †åº
+    ' 1. ½Æ»s¸ê®Æ¨Ã½Õ¾ãÄæ¦ì¶¶§Ç
     ' ------------------------------------------------------
     For i = 2 To lastRow
         targetRow = i - 1
@@ -86,7 +86,7 @@ Sub ProcessDataConversion_Full()
         ws2.Cells(targetRow, 30).Value = ws1.Cells(i, 42).Value  ' AD <- AP
         ws2.Cells(targetRow, 31).Value = ws1.Cells(i, 43).Value  ' AE <- AQ
         ws2.Cells(targetRow, 32).Value = ws1.Cells(i, 44).Value  ' AF <- AR  MK
-        ' AG (33)ã€AH (34)ã€AI (35)ã€AJ (36)ã€AK (37) ç”±å…¬å¼å¡«å…¥
+        ' AG (33)¡BAH (34)¡BAI (35)¡BAJ (36)¡BAK (37) ¥Ñ¤½¦¡¶ñ¤J
         ws2.Cells(targetRow, 38).Value = ws1.Cells(i, 45).Value  ' AL <- AS
         ws2.Cells(targetRow, 39).Value = ws1.Cells(i, 46).Value  ' AM <- AT
         ws2.Cells(targetRow, 40).Value = ws1.Cells(i, 75).Value  ' AN <- BW
@@ -105,7 +105,7 @@ Sub ProcessDataConversion_Full()
         ws2.Cells(targetRow, 53).Value = ws1.Cells(i, 61).Value  ' BA <- BI
         ws2.Cells(targetRow, 54).Value = ws1.Cells(i, 4).Value   ' BB <- D  PROGRAM
         ws2.Cells(targetRow, 55).Value = ws1.Cells(i, 7).Value   ' BC <- G  Status
-        ' BD (56) æœªæ ¸å¯ ç”± VLOOKUP å…¬å¼å¡«å…¥
+        ' BD (56) ¥¼®Ö¥i ¥Ñ VLOOKUP ¤½¦¡¶ñ¤J
         ws2.Cells(targetRow, 57).Value = ws1.Cells(i, 73).Value  ' BE <- BU
         ws2.Cells(targetRow, 58).Value = ws1.Cells(i, 71).Value  ' BF <- BS
         ws2.Cells(targetRow, 59).Value = ws1.Cells(i, 72).Value  ' BG <- BT
@@ -128,7 +128,7 @@ Sub ProcessDataConversion_Full()
         ws2.Cells(targetRow, 76).Value = ws1.Cells(i, 84).Value  ' BX <- CF
         ws2.Cells(targetRow, 77).Value = ws1.Cells(i, 89).Value  ' BY <- CK
         ws2.Cells(targetRow, 78).Value = ws1.Cells(i, 90).Value  ' BZ <- CL
-        ' === æ–°å¢æ¬„ä½ ===
+        ' === ·s¼WÄæ¦ì ===
         ws2.Cells(targetRow, 79).Value = ws1.Cells(i, 5).Value   ' CA <- E  PROGRAM CATEGORY
 
         ws2.Cells(targetRow, 5).Interior.Color = ws1.Cells(i, 9).Interior.Color
@@ -142,20 +142,20 @@ Sub ProcessDataConversion_Full()
     targetLastRow = targetRow
 
     ' ------------------------------------------------------
-    ' 2. è¨­å®šç¬¬ 1 åˆ—ç‰¹æ®Šæ¬„ä½çš„æ¨™é¡Œ
+    ' 2. ³]©w²Ä 1 ¦C¯S®íÄæ¦ìªº¼ĞÃD
     ' ------------------------------------------------------
     With ws2
-        .Cells(1, 33).Value = "MKå¤–ç™¼"
-        .Cells(1, 34).Value = "åŸå§‹å·¥å» "
+        .Cells(1, 33).Value = "MK¥~µo"
+        .Cells(1, 34).Value = "­ì©l¤u¼t"
         .Cells(1, 35).Value = "Factory"
         .Cells(1, 36).Value = "LC_NO"
         .Cells(1, 37).Value = "RFP2 YM"
-        .Cells(1, 56).Value = "æœªæ ¸å¯"
+        .Cells(1, 56).Value = "¥¼®Ö¥i"
         .Cells(1, 79).Value = "PROGRAM CATEGORY"
     End With
 
     ' ------------------------------------------------------
-    ' 3. æ’å…¥å…¬å¼ / é‚è¼¯åˆ¤æ–· (ç¬¬ 2 åˆ— ~ æœ€æœ«åˆ—)
+    ' 3. ´¡¤J¤½¦¡ / ÅŞ¿è§PÂ_ (²Ä 2 ¦C ~ ³Ì¥½¦C)
     ' ------------------------------------------------------
     For j = 2 To targetLastRow
 
@@ -165,10 +165,10 @@ Sub ProcessDataConversion_Full()
         If Not wsLookup Is Nothing Then
             ws2.Cells(j, 33).Formula = _
                 "=IFERROR(VLOOKUP(E" & j & "&AF" & j & "&BC" & j & _
-                ",ä¸Šé€±æ’å–®!$A:$AH,34,FALSE),"""")"
+                ",¤W¶g±Æ³æ!$A:$AH,34,FALSE),"""")"
             ws2.Cells(j, 56).Formula = _
                 "=IFERROR(VLOOKUP(E" & j & "&AF" & j & "&BC" & j & _
-                ",ä¸Šé€±æ’å–®!$A:$BE,57,FALSE),"""")"
+                ",¤W¶g±Æ³æ!$A:$BE,57,FALSE),"""")"
         End If
 
         ws2.Cells(j, 34).Formula = "=LEFT(AG" & j & ",3)"
@@ -177,9 +177,9 @@ Sub ProcessDataConversion_Full()
         factoryCode = Trim(UCase(ws2.Cells(j, 32).Value))
         Select Case factoryCode
             Case "MK1", "MK2", "MK5", "MH1", "MH2", "MH3"
-                ws2.Cells(j, 35).Value = "è‡ªè£½"
+                ws2.Cells(j, 35).Value = "¦Û»s"
             Case Else
-                ws2.Cells(j, 35).Value = "å¤–ç™¼"
+                ws2.Cells(j, 35).Value = "¥~µo"
         End Select
 
         Dim cellE As Range, cellK As Range, cellAJ As Range
@@ -199,7 +199,7 @@ Sub ProcessDataConversion_Full()
     Next j
 
     ' ------------------------------------------------------
-    ' 4. æ ¼å¼è¨­å®š
+    ' 4. ®æ¦¡³]©w
     ' ------------------------------------------------------
     Dim rng As Range
     Set rng = ws2.UsedRange
