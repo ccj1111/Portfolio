@@ -1,14 +1,14 @@
 Attribute VB_Name = "Module2"
 ' ==========================================================
-' PJT 附加到 已進單整理 (重寫版)
+' PJT 附加到 已進單整理
 '   1. 從 PJT 第 2 列開始，向後掃到「實際 A 欄有值」的最後一列
-'      (跳過 =BIS!... 公式回傳空字串造成的尾端假資料列)
-'   2. 以「值」貼到 已進單整理 末尾
+'   2. 以「值」貼到 已進單整理 末尾 (範圍 A~CA, col 1~79)
 '   3. 依 B 欄 (Cust) 對應填入 AF 欄 (MK)：
 '        B = "G.U"  → AF = "MK2"
 '        B = "JOE"  → AF = "MK1"
 '        B = "DKS"  → AF = "MH3"
-'   4. 將 Module1 的格式 (字型/框線/置中/列高/E,K 靠上) 套到附加列
+'   4. AC (IE) 欄套用 "0.00" 格式 (顯示 2 位小數)
+'   5. 套用 Module1 的格式 (字型/框線/置中/列高/E,K 靠上)
 '   執行前提：已先執行 Module1 的 ProcessDataConversion_Full
 ' ==========================================================
 
@@ -30,7 +30,6 @@ Sub AppendPJT_To_FinishedOrders()
     Application.Calculation = xlCalculationManual
 
     Set wb = ThisWorkbook
-
     On Error Resume Next
     Set wsTarget = wb.Sheets("已進單整理")
     Set wsPJT = wb.Sheets("PJT")
@@ -47,7 +46,7 @@ Sub AppendPJT_To_FinishedOrders()
 
     targetLastRow = wsTarget.Cells(wsTarget.Rows.Count, 1).End(xlUp).Row
 
-    ' 用 End(xlUp) 起步，再往回掃跳過公式回傳空字串的列
+    ' PJT 真正最後一列：End(xlUp) 起步後往回掃過公式空字串列
     pjtLastRow = wsPJT.Cells(wsPJT.Rows.Count, 1).End(xlUp).Row
     Do While pjtLastRow >= 2
         aVal = wsPJT.Cells(pjtLastRow, 1).Value
@@ -63,16 +62,16 @@ Sub AppendPJT_To_FinishedOrders()
     End If
 
     copyRows = pjtLastRow - 1
-    copyCols = 73                ' A~BU，對齊 已進單整理 結構
+    copyCols = 79                ' A~CA (含 PROGRAM CATEGORY)
     startRow = targetLastRow + 1
 
-    ' 以「值」貼上 (避免 =BIS!... 位移後抓錯)
+    ' 以「值」貼上 (避免 =BIS!... 公式位移失效)
     wsTarget.Range(wsTarget.Cells(startRow, 1), _
                    wsTarget.Cells(startRow + copyRows - 1, copyCols)).Value = _
         wsPJT.Range(wsPJT.Cells(2, 1), _
                     wsPJT.Cells(pjtLastRow, copyCols)).Value
 
-    ' AF (col 32) 依 B (col 2 Cust) 對應廠別
+    ' AF (col 32) 依 B (col 2 Cust) 對應廠別代碼
     For i = startRow To startRow + copyRows - 1
         custVal = Trim(CStr(wsTarget.Cells(i, 2).Value))
         Select Case UCase(custVal)
@@ -84,6 +83,10 @@ Sub AppendPJT_To_FinishedOrders()
                 wsTarget.Cells(i, 32).Value = "MH3"
         End Select
     Next i
+
+    ' IE (AC, col 29) 顯示 2 位小數
+    wsTarget.Range(wsTarget.Cells(startRow, 29), _
+                   wsTarget.Cells(startRow + copyRows - 1, 29)).NumberFormat = "0.00"
 
     ' ==========================================
     ' 套用 Module1 同款格式到附加列
