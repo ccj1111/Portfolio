@@ -3,8 +3,12 @@ Attribute VB_Name = "Module1"
 ' 已進單整理
 '   - 將「已進單底稿」依欄位對應整理為「已進單整理」
 '   - CA 欄新增 PROGRAM CATEGORY (來源：已進單底稿 E 欄)
-'   - AG 欄 (MK外發) VLOOKUP 上週排單
-'   - BD 欄 (未核可) VLOOKUP 上週排單
+'   - AG 欄 (MK外發) VLOOKUP 上週排單 -> 計算後轉為值
+'   - BD 欄 (未核可) VLOOKUP 上週排單 -> 計算後轉為值
+'   - 字型：Calibri (拉丁) + 微軟正黑體 (中文)
+'   - 指定欄位欄寬縮為 0.1：
+'       D, F, J, L, M, Q~W, AA~AB, AD~AE, AK~AO, AR~BA
+'   - 自動套用篩選 (AutoFilter)
 ' ==========================================================
 
 Sub ProcessDataConversion_Full()
@@ -17,6 +21,10 @@ Sub ProcessDataConversion_Full()
     Dim i As Long
     Dim targetRow As Long
     Dim j As Long
+    Dim factoryCode As String
+    Dim cellE As Range, cellK As Range, cellAJ As Range
+    Dim rng As Range
+    Dim rngA As Range
 
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
@@ -54,82 +62,79 @@ Sub ProcessDataConversion_Full()
     For i = 2 To lastRow
         targetRow = i - 1
 
-        ws2.Cells(targetRow, 1).Value = ws1.Cells(i, 1).Value    ' A  <- A  GROUP
-        ws2.Cells(targetRow, 2).Value = ws1.Cells(i, 2).Value    ' B  <- B  Cust
-        ws2.Cells(targetRow, 3).Value = ws1.Cells(i, 3).Value    ' C  <- C  Sub_Group
-        ws2.Cells(targetRow, 4).Value = ws1.Cells(i, 6).Value    ' D  <- F  Index
-        ws2.Cells(targetRow, 5).Value = ws1.Cells(i, 9).Value    ' E  <- I  F_Style
-        ws2.Cells(targetRow, 6).Value = ws1.Cells(i, 10).Value   ' F  <- J  C_Style
-        ws2.Cells(targetRow, 7).Value = ws1.Cells(i, 11).Value   ' G  <- K  PCS
-        ws2.Cells(targetRow, 8).Value = ws1.Cells(i, 13).Value   ' H  <- M  CPO_QTY
-        ws2.Cells(targetRow, 9).Value = ws1.Cells(i, 14).Value   ' I  <- N  CPO_QTYIE
-        ws2.Cells(targetRow, 10).Value = ws1.Cells(i, 17).Value  ' J  <- Q  FOB
-        ws2.Cells(targetRow, 11).Value = ws1.Cells(i, 15).Value  ' K  <- O  CPO
-        ws2.Cells(targetRow, 12).Value = ws1.Cells(i, 18).Value  ' L  <- R
-        ws2.Cells(targetRow, 13).Value = ws1.Cells(i, 19).Value  ' M  <- S
-        ws2.Cells(targetRow, 14).Value = ws1.Cells(i, 20).Value  ' N  <- T  EXP
-        ws2.Cells(targetRow, 15).Value = ws1.Cells(i, 21).Value  ' O  <- U
-        ws2.Cells(targetRow, 16).Value = ws1.Cells(i, 22).Value  ' P  <- V
-        ws2.Cells(targetRow, 17).Value = ws1.Cells(i, 24).Value  ' Q  <- X
-        ws2.Cells(targetRow, 18).Value = ws1.Cells(i, 26).Value  ' R  <- Z
-        ws2.Cells(targetRow, 19).Value = ws1.Cells(i, 27).Value  ' S  <- AA
-        ws2.Cells(targetRow, 20).Value = ws1.Cells(i, 28).Value  ' T  <- AB
-        ws2.Cells(targetRow, 21).Value = ws1.Cells(i, 31).Value  ' U  <- AE
-        ws2.Cells(targetRow, 22).Value = ws1.Cells(i, 29).Value  ' V  <- AC
-        ws2.Cells(targetRow, 23).Value = ws1.Cells(i, 33).Value  ' W  <- AG  PPM2
-        ws2.Cells(targetRow, 24).Value = ws1.Cells(i, 35).Value  ' X  <- AI
-        ws2.Cells(targetRow, 25).Value = ws1.Cells(i, 36).Value  ' Y  <- AJ
-        ws2.Cells(targetRow, 26).Value = ws1.Cells(i, 34).Value  ' Z  <- AH  CRFP2
-        ws2.Cells(targetRow, 27).Value = ws1.Cells(i, 38).Value  ' AA <- AL
-        ws2.Cells(targetRow, 28).Value = ws1.Cells(i, 39).Value  ' AB <- AM
-        ws2.Cells(targetRow, 29).Value = ws1.Cells(i, 40).Value  ' AC <- AN  IE
-        ws2.Cells(targetRow, 30).Value = ws1.Cells(i, 42).Value  ' AD <- AP
-        ws2.Cells(targetRow, 31).Value = ws1.Cells(i, 43).Value  ' AE <- AQ
-        ws2.Cells(targetRow, 32).Value = ws1.Cells(i, 44).Value  ' AF <- AR  MK
-        ' AG (33)、AH (34)、AI (35)、AJ (36)、AK (37) 由公式填入
-        ws2.Cells(targetRow, 38).Value = ws1.Cells(i, 45).Value  ' AL <- AS
-        ws2.Cells(targetRow, 39).Value = ws1.Cells(i, 46).Value  ' AM <- AT
-        ws2.Cells(targetRow, 40).Value = ws1.Cells(i, 75).Value  ' AN <- BW
-        ws2.Cells(targetRow, 41).Value = ws1.Cells(i, 47).Value  ' AO <- AU
-        ws2.Cells(targetRow, 42).Value = ws1.Cells(i, 48).Value  ' AP <- AV
-        ws2.Cells(targetRow, 43).Value = ws1.Cells(i, 49).Value  ' AQ <- AW
-        ws2.Cells(targetRow, 44).Value = ws1.Cells(i, 55).Value  ' AR <- BC
-        ws2.Cells(targetRow, 45).Value = ws1.Cells(i, 56).Value  ' AS <- BD
-        ws2.Cells(targetRow, 46).Value = ws1.Cells(i, 58).Value  ' AT <- BF
-        ws2.Cells(targetRow, 47).Value = ws1.Cells(i, 65).Value  ' AU <- BM
-        ws2.Cells(targetRow, 48).Value = ws1.Cells(i, 66).Value  ' AV <- BN
-        ws2.Cells(targetRow, 49).Value = ws1.Cells(i, 67).Value  ' AW <- BO
-        ws2.Cells(targetRow, 50).Value = ws1.Cells(i, 51).Value  ' AX <- AY
-        ws2.Cells(targetRow, 51).Value = ws1.Cells(i, 68).Value  ' AY <- BP
-        ws2.Cells(targetRow, 52).Value = ws1.Cells(i, 59).Value  ' AZ <- BG
-        ws2.Cells(targetRow, 53).Value = ws1.Cells(i, 61).Value  ' BA <- BI
-        ws2.Cells(targetRow, 54).Value = ws1.Cells(i, 4).Value   ' BB <- D  PROGRAM
-        ws2.Cells(targetRow, 55).Value = ws1.Cells(i, 7).Value   ' BC <- G  Status
-        ' BD (56) 未核可 由 VLOOKUP 公式填入
-        ws2.Cells(targetRow, 57).Value = ws1.Cells(i, 73).Value  ' BE <- BU
-        ws2.Cells(targetRow, 58).Value = ws1.Cells(i, 71).Value  ' BF <- BS
-        ws2.Cells(targetRow, 59).Value = ws1.Cells(i, 72).Value  ' BG <- BT
-        ws2.Cells(targetRow, 60).Value = ws1.Cells(i, 67).Value  ' BH <- BO
-        ws2.Cells(targetRow, 61).Value = ws1.Cells(i, 66).Value  ' BI <- BN
-        ws2.Cells(targetRow, 62).Value = ws1.Cells(i, 74).Value  ' BJ <- BV
-        ws2.Cells(targetRow, 63).Value = ws1.Cells(i, 65).Value  ' BK <- BM
-        ws2.Cells(targetRow, 64).Value = ws1.Cells(i, 76).Value  ' BL <- BX
-        ws2.Cells(targetRow, 65).Value = ws1.Cells(i, 77).Value  ' BM <- BY
-        ws2.Cells(targetRow, 66).Value = ws1.Cells(i, 53).Value  ' BN <- BA
-        ws2.Cells(targetRow, 67).Value = ws1.Cells(i, 54).Value  ' BO <- BB
-        ws2.Cells(targetRow, 68).Value = ws1.Cells(i, 63).Value  ' BP <- BK
-        ws2.Cells(targetRow, 69).Value = ws1.Cells(i, 27).Value  ' BQ <- AA
-        ws2.Cells(targetRow, 70).Value = ws1.Cells(i, 28).Value  ' BR <- AB
-        ws2.Cells(targetRow, 71).Value = ws1.Cells(i, 8).Value   ' BS <- H  Status2
-        ws2.Cells(targetRow, 72).Value = ws1.Cells(i, 29).Value  ' BT <- AC
-        ws2.Cells(targetRow, 73).Value = ws1.Cells(i, 81).Value  ' BU <- CC Season
-        ws2.Cells(targetRow, 74).Value = ws1.Cells(i, 82).Value  ' BV <- CD
-        ws2.Cells(targetRow, 75).Value = ws1.Cells(i, 83).Value  ' BW <- CE
-        ws2.Cells(targetRow, 76).Value = ws1.Cells(i, 84).Value  ' BX <- CF
-        ws2.Cells(targetRow, 77).Value = ws1.Cells(i, 89).Value  ' BY <- CK
-        ws2.Cells(targetRow, 78).Value = ws1.Cells(i, 90).Value  ' BZ <- CL
-        ' === 新增欄位 ===
-        ws2.Cells(targetRow, 79).Value = ws1.Cells(i, 5).Value   ' CA <- E  PROGRAM CATEGORY
+        ws2.Cells(targetRow, 1).Value = ws1.Cells(i, 1).Value
+        ws2.Cells(targetRow, 2).Value = ws1.Cells(i, 2).Value
+        ws2.Cells(targetRow, 3).Value = ws1.Cells(i, 3).Value
+        ws2.Cells(targetRow, 4).Value = ws1.Cells(i, 6).Value
+        ws2.Cells(targetRow, 5).Value = ws1.Cells(i, 9).Value
+        ws2.Cells(targetRow, 6).Value = ws1.Cells(i, 10).Value
+        ws2.Cells(targetRow, 7).Value = ws1.Cells(i, 11).Value
+        ws2.Cells(targetRow, 8).Value = ws1.Cells(i, 13).Value
+        ws2.Cells(targetRow, 9).Value = ws1.Cells(i, 14).Value
+        ws2.Cells(targetRow, 10).Value = ws1.Cells(i, 17).Value
+        ws2.Cells(targetRow, 11).Value = ws1.Cells(i, 15).Value
+        ws2.Cells(targetRow, 12).Value = ws1.Cells(i, 18).Value
+        ws2.Cells(targetRow, 13).Value = ws1.Cells(i, 19).Value
+        ws2.Cells(targetRow, 14).Value = ws1.Cells(i, 20).Value
+        ws2.Cells(targetRow, 15).Value = ws1.Cells(i, 21).Value
+        ws2.Cells(targetRow, 16).Value = ws1.Cells(i, 22).Value
+        ws2.Cells(targetRow, 17).Value = ws1.Cells(i, 24).Value
+        ws2.Cells(targetRow, 18).Value = ws1.Cells(i, 26).Value
+        ws2.Cells(targetRow, 19).Value = ws1.Cells(i, 27).Value
+        ws2.Cells(targetRow, 20).Value = ws1.Cells(i, 28).Value
+        ws2.Cells(targetRow, 21).Value = ws1.Cells(i, 31).Value
+        ws2.Cells(targetRow, 22).Value = ws1.Cells(i, 29).Value
+        ws2.Cells(targetRow, 23).Value = ws1.Cells(i, 33).Value
+        ws2.Cells(targetRow, 24).Value = ws1.Cells(i, 35).Value
+        ws2.Cells(targetRow, 25).Value = ws1.Cells(i, 36).Value
+        ws2.Cells(targetRow, 26).Value = ws1.Cells(i, 34).Value
+        ws2.Cells(targetRow, 27).Value = ws1.Cells(i, 38).Value
+        ws2.Cells(targetRow, 28).Value = ws1.Cells(i, 39).Value
+        ws2.Cells(targetRow, 29).Value = ws1.Cells(i, 40).Value
+        ws2.Cells(targetRow, 30).Value = ws1.Cells(i, 42).Value
+        ws2.Cells(targetRow, 31).Value = ws1.Cells(i, 43).Value
+        ws2.Cells(targetRow, 32).Value = ws1.Cells(i, 44).Value
+        ws2.Cells(targetRow, 38).Value = ws1.Cells(i, 45).Value
+        ws2.Cells(targetRow, 39).Value = ws1.Cells(i, 46).Value
+        ws2.Cells(targetRow, 40).Value = ws1.Cells(i, 75).Value
+        ws2.Cells(targetRow, 41).Value = ws1.Cells(i, 47).Value
+        ws2.Cells(targetRow, 42).Value = ws1.Cells(i, 48).Value
+        ws2.Cells(targetRow, 43).Value = ws1.Cells(i, 49).Value
+        ws2.Cells(targetRow, 44).Value = ws1.Cells(i, 55).Value
+        ws2.Cells(targetRow, 45).Value = ws1.Cells(i, 56).Value
+        ws2.Cells(targetRow, 46).Value = ws1.Cells(i, 58).Value
+        ws2.Cells(targetRow, 47).Value = ws1.Cells(i, 65).Value
+        ws2.Cells(targetRow, 48).Value = ws1.Cells(i, 66).Value
+        ws2.Cells(targetRow, 49).Value = ws1.Cells(i, 67).Value
+        ws2.Cells(targetRow, 50).Value = ws1.Cells(i, 51).Value
+        ws2.Cells(targetRow, 51).Value = ws1.Cells(i, 68).Value
+        ws2.Cells(targetRow, 52).Value = ws1.Cells(i, 59).Value
+        ws2.Cells(targetRow, 53).Value = ws1.Cells(i, 61).Value
+        ws2.Cells(targetRow, 54).Value = ws1.Cells(i, 4).Value
+        ws2.Cells(targetRow, 55).Value = ws1.Cells(i, 7).Value
+        ws2.Cells(targetRow, 57).Value = ws1.Cells(i, 73).Value
+        ws2.Cells(targetRow, 58).Value = ws1.Cells(i, 71).Value
+        ws2.Cells(targetRow, 59).Value = ws1.Cells(i, 72).Value
+        ws2.Cells(targetRow, 60).Value = ws1.Cells(i, 67).Value
+        ws2.Cells(targetRow, 61).Value = ws1.Cells(i, 66).Value
+        ws2.Cells(targetRow, 62).Value = ws1.Cells(i, 74).Value
+        ws2.Cells(targetRow, 63).Value = ws1.Cells(i, 65).Value
+        ws2.Cells(targetRow, 64).Value = ws1.Cells(i, 76).Value
+        ws2.Cells(targetRow, 65).Value = ws1.Cells(i, 77).Value
+        ws2.Cells(targetRow, 66).Value = ws1.Cells(i, 53).Value
+        ws2.Cells(targetRow, 67).Value = ws1.Cells(i, 54).Value
+        ws2.Cells(targetRow, 68).Value = ws1.Cells(i, 63).Value
+        ws2.Cells(targetRow, 69).Value = ws1.Cells(i, 27).Value
+        ws2.Cells(targetRow, 70).Value = ws1.Cells(i, 28).Value
+        ws2.Cells(targetRow, 71).Value = ws1.Cells(i, 8).Value
+        ws2.Cells(targetRow, 72).Value = ws1.Cells(i, 29).Value
+        ws2.Cells(targetRow, 73).Value = ws1.Cells(i, 81).Value
+        ws2.Cells(targetRow, 74).Value = ws1.Cells(i, 82).Value
+        ws2.Cells(targetRow, 75).Value = ws1.Cells(i, 83).Value
+        ws2.Cells(targetRow, 76).Value = ws1.Cells(i, 84).Value
+        ws2.Cells(targetRow, 77).Value = ws1.Cells(i, 89).Value
+        ws2.Cells(targetRow, 78).Value = ws1.Cells(i, 90).Value
+        ws2.Cells(targetRow, 79).Value = ws1.Cells(i, 5).Value
 
         ws2.Cells(targetRow, 5).Interior.Color = ws1.Cells(i, 9).Interior.Color
         ws2.Cells(targetRow, 7).Interior.Color = ws1.Cells(i, 11).Interior.Color
@@ -142,7 +147,7 @@ Sub ProcessDataConversion_Full()
     targetLastRow = targetRow
 
     ' ------------------------------------------------------
-    ' 2. 設定第 1 列特殊欄位的標題
+    ' 2. 設定特殊欄位標題
     ' ------------------------------------------------------
     With ws2
         .Cells(1, 33).Value = "MK外發"
@@ -155,10 +160,9 @@ Sub ProcessDataConversion_Full()
     End With
 
     ' ------------------------------------------------------
-    ' 3. 插入公式 / 邏輯判斷 (第 2 列 ~ 最末列)
+    ' 3. 插入公式 / 邏輯判斷
     ' ------------------------------------------------------
     For j = 2 To targetLastRow
-
         ws2.Cells(j, 37).Formula = _
             "=YEAR(Z" & j & ")&IF(MONTH(Z" & j & ")<10,""0""&MONTH(Z" & j & "),MONTH(Z" & j & "))"
 
@@ -173,7 +177,6 @@ Sub ProcessDataConversion_Full()
 
         ws2.Cells(j, 34).Formula = "=LEFT(AG" & j & ",3)"
 
-        Dim factoryCode As String
         factoryCode = Trim(UCase(ws2.Cells(j, 32).Value))
         Select Case factoryCode
             Case "MK1", "MK2", "MK5", "MH1", "MH2", "MH3"
@@ -182,7 +185,6 @@ Sub ProcessDataConversion_Full()
                 ws2.Cells(j, 35).Value = "外發"
         End Select
 
-        Dim cellE As Range, cellK As Range, cellAJ As Range
         Set cellE = ws2.Cells(j, 5)
         Set cellK = ws2.Cells(j, 11)
         Set cellAJ = ws2.Cells(j, 36)
@@ -199,9 +201,30 @@ Sub ProcessDataConversion_Full()
     Next j
 
     ' ------------------------------------------------------
-    ' 4. 格式設定
+    ' 4. 強制計算後將 VLOOKUP 結果及衍生公式轉為值
+    '    AG (33) VLOOKUP / AH (34) LEFT / AK (37) YEAR / BD (56) VLOOKUP
     ' ------------------------------------------------------
-    Dim rng As Range
+    Application.Calculation = xlCalculationAutomatic
+    Application.Calculate
+
+    With ws2.Range(ws2.Cells(2, 33), ws2.Cells(targetLastRow, 33))
+        .Value = .Value
+    End With
+    With ws2.Range(ws2.Cells(2, 34), ws2.Cells(targetLastRow, 34))
+        .Value = .Value
+    End With
+    With ws2.Range(ws2.Cells(2, 37), ws2.Cells(targetLastRow, 37))
+        .Value = .Value
+    End With
+    With ws2.Range(ws2.Cells(2, 56), ws2.Cells(targetLastRow, 56))
+        .Value = .Value
+    End With
+
+    Application.Calculation = xlCalculationManual
+
+    ' ------------------------------------------------------
+    ' 5. 格式設定
+    ' ------------------------------------------------------
     Set rng = ws2.UsedRange
 
     With ws2.Rows(1).Borders(xlEdgeBottom)
@@ -222,22 +245,42 @@ Sub ProcessDataConversion_Full()
 
     ws2.Range("AG1, AH1, BD1, CA1").Interior.Color = vbYellow
 
+    ' 字型：Calibri (拉丁) + 微軟正黑體 (中文)
     With ws2.Cells.Font
         .Name = "Calibri"
+        .NameFarEast = "微軟正黑體"
         .Bold = True
         .Size = 12
     End With
 
     ws2.Columns("G:J").NumberFormat = "#,##0"
 
+    ' 預設欄寬 14、列高 15
     ws2.Columns.ColumnWidth = 14
     ws2.Rows.RowHeight = 15
 
-    Dim rngA As Range
+    ' 指定欄位欄寬縮為 0.1
+    ws2.Columns("D").ColumnWidth = 0.1
+    ws2.Columns("F").ColumnWidth = 0.1
+    ws2.Columns("J").ColumnWidth = 0.1
+    ws2.Columns("L").ColumnWidth = 0.1
+    ws2.Columns("M").ColumnWidth = 0.1
+    ws2.Range("Q:W").ColumnWidth = 0.1
+    ws2.Range("AA:AB").ColumnWidth = 0.1
+    ws2.Range("AD:AE").ColumnWidth = 0.1
+    ws2.Range("AK:AO").ColumnWidth = 0.1
+    ws2.Range("AR:BA").ColumnWidth = 0.1
+
     Set rngA = ws2.Range("A2:A" & targetLastRow)
     rngA.TextToColumns Destination:=ws2.Range("A2"), _
         DataType:=xlFixedWidth, _
         FieldInfo:=Array(1, xlTextFormat)
+
+    ' ------------------------------------------------------
+    ' 6. 開啟篩選
+    ' ------------------------------------------------------
+    If ws2.AutoFilterMode Then ws2.AutoFilterMode = False
+    ws2.Range(ws2.Cells(1, 1), ws2.Cells(targetLastRow, 79)).AutoFilter
 
 CleanExit:
     Application.Calculation = xlCalculationAutomatic
