@@ -246,12 +246,20 @@ Sub ProcessDataConversion_Full()
     ws2.Range("AG1, AH1, BD1, CA1").Interior.Color = vbYellow
 
     ' 字型：Calibri (拉丁) + 微軟正黑體 (中文)
-    With ws2.Cells.Font
+    ' 僅套用到資料範圍，避免對整個 Cells 操作太大
+    Dim fontRng As Range
+    Set fontRng = ws2.Range(ws2.Cells(1, 1), ws2.Cells(targetLastRow, 79))
+
+    With fontRng.Font
         .Name = "Calibri"
-        .NameFarEast = "微軟正黑體"
         .Bold = True
         .Size = 12
     End With
+
+    ' NameFarEast 在部分 Excel 版本不支援 -> 用錯誤處理避免中斷
+    On Error Resume Next
+    fontRng.Font.NameFarEast = "微軟正黑體"
+    On Error GoTo 0
 
     ws2.Columns("G:J").NumberFormat = "#,##0"
 
