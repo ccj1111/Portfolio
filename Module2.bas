@@ -71,8 +71,20 @@ Sub AppendPJT_To_FinishedOrders()
         wsPJT.Range(wsPJT.Cells(2, 1), _
                     wsPJT.Cells(pjtLastRow, copyCols)).Value
 
-    ' AF (col 32) 依 B (col 2 Cust) 對應廠別代碼
+    ' A 欄強制文字格式，並在每格值前加 ' (與手動輸入 '202608 同效)
+    wsTarget.Range(wsTarget.Cells(startRow, 1), _
+                   wsTarget.Cells(startRow + copyRows - 1, 1)).NumberFormat = "@"
+
     For i = startRow To startRow + copyRows - 1
+        ' A 欄前加 '
+        aVal = wsTarget.Cells(i, 1).Value
+        If Not IsEmpty(aVal) Then
+            If CStr(aVal) <> "" Then
+                wsTarget.Cells(i, 1).Value = "'" & CStr(aVal)
+            End If
+        End If
+
+        ' AF (col 32) 依 B (col 2 Cust) 對應廠別代碼
         custVal = Trim(CStr(wsTarget.Cells(i, 2).Value))
         Select Case UCase(custVal)
             Case "G.U"
