@@ -3,28 +3,30 @@ Attribute VB_Name = "Module1"
 ' 已進單整理
 '   - 將「已進單底稿」依欄位對應整理為「已進單整理」
 '   - CA 欄新增 PROGRAM CATEGORY (來源：已進單底稿 E 欄)
-'   - AG 欄 (MK外發) VLOOKUP 上週排單 -> 計算後轉為值
-'   - BD 欄 (未核可) VLOOKUP 上週排單 -> 計算後轉為值
+'   - AG (MK外發) 用 F_Style + MK 兩鍵在 上週排單 查 AH 值
+'        無對應或錯誤時填入 "NA"
+'   - BD (未核可) 用 F_Style + MK 兩鍵在 上週排單 查 BE 值
+'        無對應時留空
+'   - AH (原始工廠) 維持 LEFT 公式 (不轉值)
 '   - 字型：Calibri (拉丁) + 微軟正黑體 (中文)
-'   - 指定欄位欄寬縮為 0.1：
-'       D, F, J, L, M, Q~W, AA~AB, AD~AE, AK~AO, AR~BA
+'   - 指定欄位欄寬縮為 0.1
 '   - 自動套用篩選 (AutoFilter)
 ' ==========================================================
 
 Sub ProcessDataConversion_Full()
-    Dim ws1 As Worksheet
-    Dim ws2 As Worksheet
-    Dim wsLookup As Worksheet
+    Dim ws1 As Worksheet, ws2 As Worksheet, wsLookup As Worksheet
     Dim wb As Workbook
-    Dim lastRow As Long
-    Dim targetLastRow As Long
-    Dim i As Long
-    Dim targetRow As Long
-    Dim j As Long
+    Dim lastRow As Long, targetLastRow As Long
+    Dim i As Long, targetRow As Long, j As Long, k As Long
     Dim factoryCode As String
     Dim cellE As Range, cellK As Range, cellAJ As Range
-    Dim rng As Range
-    Dim rngA As Range
+    Dim rng As Range, rngA As Range
+    Dim fontRng As Range
+    Dim mkDict As Object, unappDict As Object
+    Dim lookupLastRow As Long
+    Dim fVal As String, agVal As String, keyStr As String
+    Dim lookupKey As String
+    Dim sourceVal As Variant
 
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
@@ -160,23 +162,66 @@ Sub ProcessDataConversion_Full()
     End With
 
     ' ------------------------------------------------------
-    ' 3. 插入公式 / 邏輯判斷
+    ' 3. 建立 上週排單 查找字典 (key = F_Style & MK)
+    '    上週排單 F = F_Style (col 6)、AG = MK (col 33)
+    '    回傳 AH = MK外發 (col 34)、BE = 未核可 (col 57)
+    ' ------------------------------------------------------
+    Set mkDict = CreateObject("Scripting.Dictionary")
+    Set unappDict = CreateObject("Scripting.Dictionary")
+
+    If Not wsLookup Is Nothing Then
+        lookupLastRow = wsLookup.Cells(wsLookup.Rows.Count, 6).End(xlUp).Row
+        For k = 2 To lookupLastRow
+            fVal = CStr(wsLookup.Cells(k, 6).Value)
+            agVal = CStr(wsLookup.Cells(k, 33).Value)
+            keyStr = fVal & Chr(7) & agVal
+            If Not mkDict.Exists(keyStr) Then
+                mkDict.Add keyStr, wsLookup.Cells(k, 34).Value
+                unappDict.Add keyStr, wsLookup.Cells(k, 57).Value
+            End If
+        Next k
+    End If
+
+    ' ------------------------------------------------------
+    ' 4. 插入公式 / 邏輯判斷
     ' ------------------------------------------------------
     For j = 2 To targetLastRow
+
+        ' AK: RFP2 YM 公式 (稍後會轉為值)
         ws2.Cells(j, 37).Formula = _
             "=YEAR(Z" & j & ")&IF(MONTH(Z" & j & ")<10,""0""&MONTH(Z" & j & "),MONTH(Z" & j & "))"
 
-        If Not wsLookup Is Nothing Then
-            ws2.Cells(j, 33).Formula = _
-                "=IFERROR(VLOOKUP(E" & j & "&AF" & j & "&BC" & j & _
-                ",上週排單!$A:$AH,34,FALSE),"""")"
-            ws2.Cells(j, 56).Formula = _
-                "=IFERROR(VLOOKUP(E" & j & "&AF" & j & "&BC" & j & _
-                ",上週排單!$A:$BE,57,FALSE),"""")"
+        ' AG / BD 查找 (key = E F_Style & AF MK)
+        lookupKey = CStr(ws2.Cells(j, 5).Value) & Chr(7) & CStr(ws2.Cells(j, 32).Value)
+
+        ' AG (MK外發) - 失敗或錯誤填 "NA"
+        If mkDict.Exists(lookupKey) Then
+            sourceVal = mkDict(lookupKey)
+            If IsError(sourceVal) Then
+                ws2.Cells(j, 33).Value = "NA"
+            Else
+                ws2.Cells(j, 33).Value = sourceVal
+            End If
+        Else
+            ws2.Cells(j, 33).Value = "NA"
         End If
 
+        ' BD (未核可) - 失敗填 ""
+        If unappDict.Exists(lookupKey) Then
+            sourceVal = unappDict(lookupKey)
+            If IsError(sourceVal) Then
+                ws2.Cells(j, 56).Value = ""
+            Else
+                ws2.Cells(j, 56).Value = sourceVal
+            End If
+        Else
+            ws2.Cells(j, 56).Value = ""
+        End If
+
+        ' AH (原始工廠) - 維持 LEFT 公式 (不轉值)
         ws2.Cells(j, 34).Formula = "=LEFT(AG" & j & ",3)"
 
+        ' AI Factory 判斷
         factoryCode = Trim(UCase(ws2.Cells(j, 32).Value))
         Select Case factoryCode
             Case "MK1", "MK2", "MK5", "MH1", "MH2", "MH3"
@@ -185,14 +230,11 @@ Sub ProcessDataConversion_Full()
                 ws2.Cells(j, 35).Value = "外發"
         End Select
 
+        ' AJ LC_NO 顏色判斷
         Set cellE = ws2.Cells(j, 5)
         Set cellK = ws2.Cells(j, 11)
         Set cellAJ = ws2.Cells(j, 36)
-
-        If cellE.Interior.Color = vbYellow Then
-            cellAJ.Value = "New Order"
-        End If
-
+        If cellE.Interior.Color = vbYellow Then cellAJ.Value = "New Order"
         If cellK.Interior.Color = vbYellow Then
             cellAJ.Value = "New CPO"
         ElseIf cellK.Interior.Color = vbRed Then
@@ -201,29 +243,19 @@ Sub ProcessDataConversion_Full()
     Next j
 
     ' ------------------------------------------------------
-    ' 4. 強制計算後將 VLOOKUP 結果及衍生公式轉為值
-    '    AG (33) VLOOKUP / AH (34) LEFT / AK (37) YEAR / BD (56) VLOOKUP
+    ' 5. 強制計算後將 AK 轉為值 (AG/BD 已是值，AH 維持公式)
     ' ------------------------------------------------------
     Application.Calculation = xlCalculationAutomatic
     Application.Calculate
 
-    With ws2.Range(ws2.Cells(2, 33), ws2.Cells(targetLastRow, 33))
-        .Value = .Value
-    End With
-    With ws2.Range(ws2.Cells(2, 34), ws2.Cells(targetLastRow, 34))
-        .Value = .Value
-    End With
     With ws2.Range(ws2.Cells(2, 37), ws2.Cells(targetLastRow, 37))
-        .Value = .Value
-    End With
-    With ws2.Range(ws2.Cells(2, 56), ws2.Cells(targetLastRow, 56))
         .Value = .Value
     End With
 
     Application.Calculation = xlCalculationManual
 
     ' ------------------------------------------------------
-    ' 5. 格式設定
+    ' 6. 格式設定
     ' ------------------------------------------------------
     Set rng = ws2.UsedRange
 
@@ -246,8 +278,6 @@ Sub ProcessDataConversion_Full()
     ws2.Range("AG1, AH1, BD1, CA1").Interior.Color = vbYellow
 
     ' 字型：Calibri (拉丁) + 微軟正黑體 (中文)
-    ' 僅套用到資料範圍，避免對整個 Cells 操作太大
-    Dim fontRng As Range
     Set fontRng = ws2.Range(ws2.Cells(1, 1), ws2.Cells(targetLastRow, 79))
 
     With fontRng.Font
@@ -256,18 +286,15 @@ Sub ProcessDataConversion_Full()
         .Size = 12
     End With
 
-    ' NameFarEast 在部分 Excel 版本不支援 -> 用錯誤處理避免中斷
     On Error Resume Next
     fontRng.Font.NameFarEast = "微軟正黑體"
     On Error GoTo 0
 
     ws2.Columns("G:J").NumberFormat = "#,##0"
 
-    ' 預設欄寬 14、列高 15
     ws2.Columns.ColumnWidth = 14
     ws2.Rows.RowHeight = 15
 
-    ' 指定欄位欄寬縮為 0.1
     ws2.Columns("D").ColumnWidth = 0.1
     ws2.Columns("F").ColumnWidth = 0.1
     ws2.Columns("J").ColumnWidth = 0.1
@@ -285,7 +312,7 @@ Sub ProcessDataConversion_Full()
         FieldInfo:=Array(1, xlTextFormat)
 
     ' ------------------------------------------------------
-    ' 6. 開啟篩選
+    ' 7. 開啟篩選
     ' ------------------------------------------------------
     If ws2.AutoFilterMode Then ws2.AutoFilterMode = False
     ws2.Range(ws2.Cells(1, 1), ws2.Cells(targetLastRow, 79)).AutoFilter
