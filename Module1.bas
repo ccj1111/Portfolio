@@ -221,14 +221,12 @@ Sub ProcessDataConversion_Full()
         ' AH (原始工廠) - 維持 LEFT 公式 (不轉值)
         ws2.Cells(j, 34).Formula = "=LEFT(AG" & j & ",3)"
 
-        ' AI Factory 判斷
-        factoryCode = Trim(UCase(ws2.Cells(j, 32).Value))
-        Select Case factoryCode
-            Case "MK1", "MK2", "MK5", "MH1", "MH2", "MH3"
-                ws2.Cells(j, 35).Value = "自製"
-            Case Else
-                ws2.Cells(j, 35).Value = "外發"
-        End Select
+        ' AI (Factory) - 維持公式：依 AF 欄 (MK) 判斷自製/外發
+        ws2.Cells(j, 35).Formula = _
+            "=IF(OR(TRIM(AF" & j & ")=""MK1"",TRIM(AF" & j & ")=""MK2""," & _
+            "TRIM(AF" & j & ")=""MK5"",TRIM(AF" & j & ")=""MH1""," & _
+            "TRIM(AF" & j & ")=""MH2"",TRIM(AF" & j & ")=""MH3"")," & _
+            """自製"",""外發"")"
 
         ' AJ LC_NO 顏色判斷
         Set cellE = ws2.Cells(j, 5)
