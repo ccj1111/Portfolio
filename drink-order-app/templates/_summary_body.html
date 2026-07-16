@@ -1,0 +1,110 @@
+{% if not week or not week.menu %}
+  <div class="banner banner-warn">本週尚未有菜單或訂單資料。</div>
+{% else %}
+  {% if week.menu.is_foodpanda %}
+    <div class="banner banner-info">
+      ⚠️ Foodpanda 訂購，預估總額<strong>未含平台費</strong>（約 $10，實際依當次訂單而定），
+      回填實際結帳金額後會自動反映在下方每人分攤金額中。
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <h2 style="margin-top:0;">品項彙總</h2>
+    {% if item_breakdown %}
+    <table class="data-table">
+      <thead><tr><th>品項</th><th>數量</th><th>小計</th></tr></thead>
+      <tbody>
+      {% for name, info in item_breakdown %}
+        <tr><td>{{ name }}</td><td>{{ info.qty }}</td><td>${{ info.subtotal }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">目前還沒有人點餐。</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">個人明細</h2>
+    {% if not person_breakdown %}
+    <p class="muted">目前還沒有人點餐。</p>
+    {% endif %}
+    {% for name, info in person_breakdown %}
+    <div style="margin-bottom:18px;">
+      <strong>{{ name }}</strong>
+      {% if settlement_result %}
+        <span class="muted">
+          預估 <span class="strike">${{ info.subtotal }}</span>
+          → 實付 <span class="adjusted">${{ settlement_result.per_person.get(name, 0) }}</span>
+        </span>
+      {% else %}
+        <span class="muted">預估小計 ${{ info.subtotal }}</span>
+      {% endif %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>品項</th><th>數量</th><th>甜度/冰塊</th><th>加料</th><th>備註</th><th>金額</th>
+            {% if is_admin %}<th></th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+        {% for o in info.orders %}
+          <tr>
+            <td>{{ o.item_name }}</td>
+            <td>{{ o.qty }}</td>
+            <td>{{ o.sugar }} / {{ o.ice }}</td>
+            <td>{{ o.topping_list | join('、') }}</td>
+            <td>{{ o.note }}</td>
+            <td>
+              {% if settlement_result %}
+                <span class="strike">${{ o.line_total }}</span>
+                <span class="adjusted">${{ settlement_result.per_order.get(o.id, 0) }}</span>
+              {% else %}
+                ${{ o.line_total }}
+              {% endif %}
+            </td>
+            {% if is_admin %}
+            <td>
+              <form method="post" action="{{ url_for('admin_delete_order', order_id=o.id) }}" onsubmit="return confirm('確定刪除這筆訂單？');">
+                <button type="submit" class="link-btn">刪除</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">結算</h2>
+    <p>預估總額（未含平台費）：<strong>${{ grand_total_estimate }}</strong></p>
+    {% if settlement and settlement.actual_total is not none %}
+      <p>實際結帳金額：<strong>${{ settlement.actual_total }}</strong>{% if settlement.note %}（{{ settlement.note }}）{% endif %}</p>
+      <div class="banner banner-info">
+        已依實際金額換算，每筆金額無條件進位，確保管理者不吃虧。
+        多收的進位緩衝：<strong>${{ settlement_result.buffer }}</strong>
+      </div>
+    {% else %}
+      <p class="muted">尚未回填實際結帳金額，以下金額均為預估值。</p>
+    {% endif %}
+
+    {% if is_admin %}
+    <form method="post" action="{{ url_for('admin_settlement') }}" style="margin-top:16px;">
+      <div class="field">
+        <label>實際結帳總額</label>
+        <input type="number" name="actual_total" min="0" step="1"
+          value="{{ settlement.actual_total if settlement and settlement.actual_total is not none else '' }}">
+      </div>
+      <div class="field">
+        <label>結帳備註</label>
+        <input type="text" name="note" value="{{ settlement.note if settlement else '' }}"
+          placeholder="例如：含平台費$45、滿額折$30">
+      </div>
+      <button type="submit" class="btn">回填實際金額</button>
+    </form>
+    {% endif %}
+  </div>
+{% endif %}

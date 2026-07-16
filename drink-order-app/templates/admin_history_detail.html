@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}歷史週次明細 - 管理者{% endblock %}
+{% block content %}
+<h1>{{ week.menu.store if week.menu else '歷史週次' }}（{{ week.week_key }}）</h1>
+<p class="muted"><a href="{{ url_for('admin_history') }}">← 返回歷史週次列表</a></p>
+{% include "_summary_body.html" %}
+{% endblock %}

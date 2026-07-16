@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}歷史週次 - 管理者{% endblock %}
+{% block content %}
+<h1>歷史週次</h1>
+<p class="muted"><a href="{{ url_for('admin_menu') }}">← 返回本週設定</a></p>
+
+{% if not weeks %}
+  <div class="banner banner-info">目前沒有歷史紀錄。點擊「清空本週訂單，開新一輪」後，本週資料會封存於此。</div>
+{% else %}
+<div class="card">
+  <table class="data-table">
+    <thead><tr><th>週次</th><th>店家</th><th>建立時間</th><th>實際結帳</th><th></th></tr></thead>
+    <tbody>
+    {% for w in weeks %}
+      <tr>
+        <td>{{ w.week_key }}</td>
+        <td>{{ w.menu.store if w.menu else '-' }}</td>
+        <td>{{ w.created_at.strftime('%Y-%m-%d %H:%M') if w.created_at else '-' }}</td>
+        <td>
+          {% if w.settlement and w.settlement.actual_total is not none %}
+            ${{ w.settlement.actual_total }}
+          {% else %}
+            <span class="muted">未回填</span>
+          {% endif %}
+        </td>
+        <td><a href="{{ url_for('admin_history_detail', week_id=w.id) }}">查看</a></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

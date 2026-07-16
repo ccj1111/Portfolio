@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}本週彙總 - 揪團手搖{% endblock %}
+{% block content %}
+<h1>本週彙總{% if week %}（{{ week.week_key }}）{% endif %}</h1>
+{% if is_admin %}
+<p class="muted"><a href="{{ url_for('admin_menu') }}">← 返回本週設定</a></p>
+{% endif %}
+{% include "_summary_body.html" %}
+{% endblock %}

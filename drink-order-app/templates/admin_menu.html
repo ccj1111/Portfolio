@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}本週設定 - 管理者{% endblock %}
+{% block content %}
+
+<h1>本週設定</h1>
+<p class="muted">
+  <a href="{{ url_for('admin_summary') }}">彙總與結算 →</a>
+  ｜ <a href="{{ url_for('admin_history') }}">歷史週次 →</a>
+</p>
+
+{% if templates %}
+<div class="card">
+  <div class="field" style="margin-bottom:0;">
+    <label>套用範本</label>
+    <div class="tag-select">
+      <select id="templateSelect">
+        <option value="">— 選擇常用店家範本 —</option>
+        {% for t in templates %}
+        <option value="{{ t.id }}">{{ t.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="btn secondary" id="applyTemplateBtn">套用</button>
+      <button type="button" class="btn danger" id="deleteTemplateBtn">刪除此範本</button>
+    </div>
+    <p class="muted">⚠️ 範本價格僅供參考，套用後請務必對照當週 foodpanda／店家頁面核對並調整。</p>
+  </div>
+</div>
+{% endif %}
+
+<form id="menuForm" method="post" action="{{ url_for('admin_publish') }}">
+  <div class="card">
+    <div class="field">
+      <label>店家名稱 *</label>
+      <input type="text" name="store" id="storeInput" value="{{ menu.store if menu else '' }}" required>
+    </div>
+    <div class="field">
+      <label>Foodpanda / 訂購連結</label>
+      <input type="text" name="foodpanda_link" id="foodpandaInput" value="{{ menu.foodpanda_link if menu else '' }}" placeholder="https://foodpanda... （網址含 foodpanda 會自動顯示平台費提醒）">
+    </div>
+    <div class="field">
+      <label>截止時間</label>
+      <input type="datetime-local" name="deadline" id="deadlineInput"
+        value="{{ menu.deadline.strftime('%Y-%m-%dT%H:%M') if menu and menu.deadline else '' }}">
+    </div>
+    <div class="field">
+      <label>備註（平台費／滿額折扣規則等）</label>
+      <textarea name="notes" id="notesInput">{{ menu.notes if menu else '' }}</textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">品項清單</h2>
+    <div class="editable-list" id="itemsRows"></div>
+    <button type="button" class="btn secondary" id="addItemBtn">+ 新增品項</button>
+    <input type="hidden" name="items_json" id="itemsJson">
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0;">加料清單</h2>
+    <p class="muted">⚠️ 加料是否收費、收費金額請對照下單當下的 foodpanda／店家頁面實際顯示為準，此處僅供保守參考值。</p>
+    <div class="editable-list" id="toppingsRows"></div>
+    <button type="button" class="btn secondary" id="addToppingBtn">+ 新增加料</button>
+    <input type="hidden" name="toppings_json" id="toppingsJson">
+  </div>
+
+  <div class="card" style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button type="submit" class="btn">發布本週菜單</button>
+    <button type="button" class="btn secondary" id="saveTemplateBtn">另存為範本</button>
+  </div>
+</form>
+
+<form method="post" action="{{ url_for('admin_reset') }}" id="resetForm">
+  <div class="card">
+    <h2 style="margin-top:0;">開新一輪</h2>
+    <p class="muted">僅清空本週訂單與結算金額，菜單設定會保留（可再微調後重新發布）。</p>
+    <button type="submit" class="btn danger" id="resetBtn">清空本週訂單，開新一輪</button>
+  </div>
+</form>
+
+<script id="templatesData" type="application/json">{{ templates_json | safe }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.__INITIAL_MENU__ = {
+    items: [
+      {% for item in (menu.items if menu else []) %}
+      {name: {{ item.name | tojson }}, price: {{ item.price }}},
+      {% endfor %}
+    ],
+    toppings: [
+      {% for t in (menu.toppings if menu else []) %}
+      {name: {{ t.name | tojson }}, price: {{ t.price }}},
+      {% endfor %}
+    ]
+  };
+</script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}揪團手搖{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{{ url_for('order_page') }}">🧋 揪團手搖</a>
+  <nav>
+    <a href="{{ url_for('order_page') }}">點餐</a>
+    <a href="{{ url_for('summary_page') }}">彙總</a>
+    <a href="{{ url_for('admin_menu') }}">管理者</a>
+  </nav>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+
+<div id="toast" class="toast"></div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

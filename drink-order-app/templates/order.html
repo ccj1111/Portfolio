@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ menu.store if menu else "點餐" }} - 揪團手搖{% endblock %}
+{% block content %}
+
+{% if not published %}
+  <h1>本週點餐</h1>
+  <div class="banner banner-warn">本週尚未發布菜單，請稍後再來，或洽詢管理者。</div>
+{% else %}
+  <h1>{{ menu.store }}</h1>
+
+  {% if menu.is_foodpanda %}
+    <div class="banner banner-info">
+      ⚠️ Foodpanda 訂購，需另計平台費約 $10（實際依當次訂單而定）。以下金額<strong>未含平台費</strong>。
+    </div>
+  {% endif %}
+
+  {% if menu.deadline %}
+    <div class="banner {{ 'banner-danger' if closed else 'banner-info' }}">
+      截止時間：{{ menu.deadline.strftime('%Y-%m-%d %H:%M') }}{% if closed %}（已截止收單）{% endif %}
+    </div>
+  {% endif %}
+
+  {% if menu.notes %}
+    <div class="card"><strong>備註：</strong>{{ menu.notes }}</div>
+  {% endif %}
+
+  {% if closed %}
+    <div class="banner banner-danger">本週已截止收單，請等候下一輪開團。</div>
+  {% else %}
+    <div id="step1" class="step active">
+      <h2>Step 1・選飲料</h2>
+      <div class="item-grid">
+        {% for item in menu.items %}
+        <div class="item-card" data-id="{{ item.id }}" data-name="{{ item.name }}" data-price="{{ item.price }}">
+          {{ item.name }}
+          <span class="price">${{ item.price }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="step2" class="step">
+      <h2>Step 2・客製化</h2>
+      <button type="button" class="link-btn" id="backBtn">← 換一杯</button>
+
+      <div class="card" style="margin-top:12px;">
+        <div class="field">
+          <label>已選飲料</label>
+          <div id="selectedItemName" style="font-size:1.1rem;font-weight:700;"></div>
+        </div>
+
+        <div class="field">
+          <label>數量</label>
+          <div class="qty-stepper">
+            <button type="button" id="qtyMinus">−</button>
+            <span id="qtyValue">1</span>
+            <button type="button" id="qtyPlus">+</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>甜度</label>
+          <select id="sugarSelect">
+            {% for s in sugar_options %}
+            <option value="{{ s }}" {% if s == '正常糖' %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="field">
+          <label>冰塊</label>
+          <select id="iceSelect">
+            {% for i in ice_options %}
+            <option value="{{ i }}" {% if i == '正常冰' %}selected{% endif %}>{{ i }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {% if menu.toppings %}
+        <div class="field">
+          <label>加料（可複選）</label>
+          <div class="topping-list" id="toppingList">
+            {% for t in menu.toppings %}
+            <div class="topping-tag" data-id="{{ t.id }}" data-name="{{ t.name }}" data-price="{{ t.price }}">{{ t.name }} +${{ t.price }}</div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="field">
+          <label>其他備註</label>
+          <textarea id="noteInput" placeholder="自由填寫"></textarea>
+        </div>
+
+        <div class="field">
+          <label>姓名</label>
+          <input type="text" id="nameInput" placeholder="請輸入姓名">
+        </div>
+      </div>
+
+      <div class="subtotal-bar">
+        <div>小計 <span class="amount" id="subtotalAmount">$0</span></div>
+        <button type="button" class="btn" id="submitBtn">送出訂單</button>
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/order.js') }}"></script>
+{% endblock %}
