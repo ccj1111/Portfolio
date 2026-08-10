@@ -1,14 +1,13 @@
 Attribute VB_Name = "Module2"
 ' ==========================================================
 ' PJT 附加到 已進單整理
-'   1. 從 PJT 第 2 列開始，向後掃到「實際 A 欄有值」的最後一列
-'   2. 以「值」貼到 已進單整理 末尾 (範圍 A~CA, col 1~79)
-'   3. 依 B 欄 (Cust) 對應填入 AF 欄 (MK)：
-'        B = "G.U"  → AF = "MK2"
-'        B = "JOE"  → AF = "MK1"
-'        B = "DKS"  → AF = "MH3"
-'   4. AC (IE) 欄套用 "0.00" 格式 (顯示 2 位小數)
-'   5. 套用 Module1 的格式 (字型/框線/置中/列高/E,K 靠上)
+'   1. 從 PJT 第 2 列 ~ A 欄有值的最後一列以「值」貼上
+'   2. A 欄每格前加 ' (強制文字)
+'   3. AF (col 32) 填入 BIS Maker：
+'        當 Status2 (BS/col 71) = "待確認" 時
+'        AF = PJT CB (col 80，其值來自 BIS!K)
+'   4. AC (IE, col 29) 顯示 2 位小數
+'   5. 套用 Module1 相同格式
 '   執行前提：已先執行 Module1 的 ProcessDataConversion_Full
 ' ==========================================================
 
@@ -22,8 +21,10 @@ Sub AppendPJT_To_FinishedOrders()
     Dim copyRows As Long
     Dim copyCols As Long
     Dim i As Long
-    Dim custVal As String
     Dim aVal As Variant
+    Dim cbVal As Variant
+    Dim s2Val As String
+    Dim pjtRowIdx As Long
     Dim appendedRng As Range
 
     Application.ScreenUpdating = False
@@ -76,6 +77,7 @@ Sub AppendPJT_To_FinishedOrders()
                    wsTarget.Cells(startRow + copyRows - 1, 1)).NumberFormat = "@"
 
     For i = startRow To startRow + copyRows - 1
+
         ' A 欄前加 '
         aVal = wsTarget.Cells(i, 1).Value
         If Not IsEmpty(aVal) Then
@@ -84,16 +86,16 @@ Sub AppendPJT_To_FinishedOrders()
             End If
         End If
 
-        ' AF (col 32) 依 B (col 2 Cust) 對應廠別代碼
-        custVal = Trim(CStr(wsTarget.Cells(i, 2).Value))
-        Select Case UCase(custVal)
-            Case "G.U"
-                wsTarget.Cells(i, 32).Value = "MK2"
-            Case "JOE"
-                wsTarget.Cells(i, 32).Value = "MK1"
-            Case "DKS"
-                wsTarget.Cells(i, 32).Value = "MH3"
-        End Select
+        ' AF (col 32) = BIS Maker (PJT CB, col 80) - 只在 Status2 = "待確認" 時套用
+        pjtRowIdx = i - startRow + 2   ' 對應 PJT 的原始行號
+        s2Val = Trim(CStr(wsTarget.Cells(i, 71).Value))  ' BS = Status2
+
+        If s2Val = "待確認" Then
+            cbVal = wsPJT.Cells(pjtRowIdx, 80).Value      ' PJT CB = BIS Maker
+            If Not IsError(cbVal) And Not IsEmpty(cbVal) Then
+                wsTarget.Cells(i, 32).Value = cbVal
+            End If
+        End If
     Next i
 
     ' IE (AC, col 29) 顯示 2 位小數
