@@ -18,6 +18,8 @@ Sub AppendPJT_To_FinishedOrders()
     Dim wsTarget As Worksheet
     Dim wsPJT As Worksheet
     Dim wsLookup As Worksheet
+    Dim wsBIS As Worksheet
+    Dim bisMakerVal As Variant
     Dim targetLastRow As Long
     Dim pjtLastRow As Long
     Dim lookupLastRow As Long
@@ -39,6 +41,8 @@ Sub AppendPJT_To_FinishedOrders()
     Dim mkAssigned As Boolean
 
     Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationAutomatic
+    Application.Calculate       ' 強制先算過所有 =BIS!... 公式
     Application.Calculation = xlCalculationManual
 
     Set wb = ThisWorkbook
@@ -46,6 +50,7 @@ Sub AppendPJT_To_FinishedOrders()
     Set wsTarget = wb.Sheets("已進單整理")
     Set wsPJT = wb.Sheets("PJT")
     Set wsLookup = wb.Sheets("上週排單")
+    Set wsBIS = wb.Sheets("BIS")
     On Error GoTo 0
 
     If wsTarget Is Nothing Then
@@ -149,11 +154,28 @@ Sub AppendPJT_To_FinishedOrders()
                 End If
             End If
 
-            ' Fallback: PJT CB (BIS Maker)
+            ' Fallback: 直接讀 BIS.K (col 11) - 比透過 PJT.CB 公式更可靠
+            If Not mkAssigned And Not wsBIS Is Nothing Then
+                bisMakerVal = wsBIS.Cells(pjtRowIdx, 11).Value
+                If Not IsError(bisMakerVal) Then
+                    If Not IsEmpty(bisMakerVal) Then
+                        If Trim(CStr(bisMakerVal)) <> "" Then
+                            wsTarget.Cells(i, 32).Value = bisMakerVal
+                            mkAssigned = True
+                        End If
+                    End If
+                End If
+            End If
+
+            ' 再 Fallback: PJT CB (若 BIS 讀不到，最後試 PJT 那格)
             If Not mkAssigned Then
                 cbVal = wsPJT.Cells(pjtRowIdx, 80).Value
-                If Not IsError(cbVal) And Not IsEmpty(cbVal) Then
-                    wsTarget.Cells(i, 32).Value = cbVal
+                If Not IsError(cbVal) Then
+                    If Not IsEmpty(cbVal) Then
+                        If Trim(CStr(cbVal)) <> "" Then
+                            wsTarget.Cells(i, 32).Value = cbVal
+                        End If
+                    End If
                 End If
             End If
         End If
