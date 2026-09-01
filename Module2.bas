@@ -4,7 +4,7 @@ Attribute VB_Name = "Module2"
 '   1. 從 PJT 第 2 列 ~ A 欄有值的最後一列以「值」貼上
 '   2. A 欄每格前加 ' (強制文字)
 '   3. AF (col 32) 填入 MK，兩段式查找：
-'        (a) 上週排單 同月份(GROUP) + 款號(F_Style) + 客戶(Cust) + PCS
+'        (a) 上週排單 同月份(GROUP) + 款號(F_Style) + 客戶(Cust) + CPO_QTY
 '            回傳 上週排單 AG (MK)
 '        (b) 找不到才用 PJT CB (col 80，值來自 BIS!K) 當 fallback
 '        只在 Status2 (BS/col 71) = "待確認" 時執行
@@ -80,7 +80,7 @@ Sub AppendPJT_To_FinishedOrders()
 
     ' ==========================================
     ' 建立 上週排單 查找字典
-    '   key = GROUP (B/col 2) + F_Style (F/col 6) + Cust (C/col 3) + PCS (H/col 8)
+    '   key = GROUP (B/col 2) + F_Style (F/col 6) + Cust (C/col 3) + CPO_QTY (I/col 9)
     '   value = MK (AG/col 33)
     '   (上週排單 A 欄是 Vlookup 鍵，所以欄位序比 已進單整理 多 1)
     ' ==========================================
@@ -92,7 +92,7 @@ Sub AppendPJT_To_FinishedOrders()
             grpVal = CStr(wsLookup.Cells(k, 2).Value)  ' B = GROUP (月份)
             fs = CStr(wsLookup.Cells(k, 6).Value)      ' F = F_Style
             cs = CStr(wsLookup.Cells(k, 3).Value)      ' C = Cust
-            pcsVal = wsLookup.Cells(k, 8).Value        ' H = PCS
+            pcsVal = wsLookup.Cells(k, 9).Value        ' I = CPO_QTY
             If grpVal <> "" And fs <> "" And cs <> "" And IsNumeric(pcsVal) Then
                 lkey = grpVal & Chr(7) & fs & Chr(7) & cs & Chr(7) & CStr(pcsVal)
                 If Not mkDict.Exists(lkey) Then
@@ -129,12 +129,12 @@ Sub AppendPJT_To_FinishedOrders()
         If s2Val = "待確認" Then
             mkAssigned = False
 
-            ' 優先: 上週排單 (GROUP + F_Style + Cust + PCS)
+            ' 優先: 上週排單 (GROUP + F_Style + Cust + CPO_QTY)
             Dim tGrp As String, tPcs As Variant
             tGrp = CStr(wsTarget.Cells(i, 1).Value)  ' A = GROUP (月份)
             tFS = CStr(wsTarget.Cells(i, 5).Value)   ' E = F_Style
             tCust = CStr(wsTarget.Cells(i, 2).Value) ' B = Cust
-            tPcs = wsTarget.Cells(i, 7).Value        ' G = PCS
+            tPcs = wsTarget.Cells(i, 8).Value        ' H = CPO_QTY
             ' A 欄前面加了 '，去掉才能比對 (VBA .Value 已經是不含 ' 的字串)
             If tGrp <> "" And tFS <> "" And tCust <> "" And IsNumeric(tPcs) Then
                 lkey = tGrp & Chr(7) & tFS & Chr(7) & tCust & Chr(7) & CStr(tPcs)
